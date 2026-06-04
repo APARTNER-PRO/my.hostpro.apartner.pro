@@ -154,6 +154,15 @@ class Database
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS settings (
+                    `key`   VARCHAR(255) NOT NULL PRIMARY KEY,
+                    `value` TEXT NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $pdo->exec("INSERT IGNORE INTO settings (`key`, `value`) VALUES ('payment_methods', '{\"paddle\":true,\"monobank\":false,\"wayforpay\":false}')");
+
         } else {
             // SQLite
             $pdo->exec("
@@ -220,6 +229,11 @@ class Database
                     created_at  TEXT    DEFAULT (datetime('now')),
                     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
                 );
+                CREATE TABLE IF NOT EXISTS settings (
+                    key   TEXT NOT NULL PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+                INSERT OR IGNORE INTO settings (key, value) VALUES ('payment_methods', '{\"paddle\":true,\"monobank\":false,\"wayforpay\":false}');
             ");
         }
     }

@@ -895,5 +895,67 @@ if ($method === 'POST' && preg_match('#^/admin/invoices$#', $path)) {
     respond(['success' => true, 'invoice_id' => $invoiceId]);
 }
 
+// ── GET /admin/settings ───────────────────────────────────────────────────────
+if ($method === 'GET' && $path === '/admin/settings') {
+    AuthMiddleware::requireAdmin();
+    $db = Database::get();
+    $stmt = $db->prepare('SELECT `value` FROM settings WHERE `key` = ?');
+    $stmt->execute(['payment_methods']);
+    $row = $stmt->fetch();
+    $methods = $row ? json_decode($row['value'], true) : ['paddle' => true, 'monobank' => false, 'wayforpay' => false];
+    respond(['payment_methods' => $methods]);
+}
+
+// ── PUT /admin/settings ───────────────────────────────────────────────────────
+if ($method === 'PUT' && $path === '/admin/settings') {
+    AuthMiddleware::requireAdmin();
+    $db = Database::get();
+    $val = json_encode($body['payment_methods'] ?? []);
+    
+    // Просте видалення та вставка для сумісності SQLite/MariaDB
+    $db->prepare('DELETE FROM settings WHERE `key` = ?')->execute(['payment_methods']);
+    $db->prepare('INSERT INTO settings (`key`, `value`) VALUES (?, ?)')->execute(['payment_methods', $val]);
+    
+    respond(['success' => true]);
+}
+
+// ── GET /client/settings ──────────────────────────────────────────────────────
+if ($method === 'GET' && $path === '/client/settings') {
+    $db = Database::get();
+    $stmt = $db->prepare('SELECT `value` FROM settings WHERE `key` = ?');
+    $stmt->execute(['payment_methods']);
+    $row = $stmt->fetch();
+    $methods = $row ? json_decode($row['value'], true) : ['paddle' => true, 'monobank' => false, 'wayforpay' => false];
+    respond(['payment_methods' => $methods]);
+}
+
+// ── POST /client/invoices/{id}/pay-mock ──────────────────────────────────────────
+if ($method === 'POST' && preg_match('#^/client/invoices/(\d+)/pay-mock$#', $path, $m)) {
+    $user = AuthMiddleware::requireAuth();
+    $invoiceId = (int)$m[1];
+    $payMethod = trim($body['method'] ?? 'monobank');
+    $db = Database::get();
+    
+    $stmt = $db->prepare('SELECT * FROM invoices WHERE id = ?');
+    $stmt->execute([$invoiceId]);
+    $invoice = $stmt->fetch();
+    if (!$invoice) respond(['error' => 'Invoice not found'], 404);
+    
+    if ($user['role'] !== 'admin' && (int)$invoice['user_id'] !== (int)$user['sub']) {
+        respond(['error' => 'Access denied'], 403);
+    }
+    
+    $currentTime = date('Y-m-d H:i:s');
+    $stmt = $db->prepare("UPDATE invoices SET status = 'paid', updated_at = ? WHERE id = ?");
+    $stmt->execute([$currentTime, $invoiceId]);
+    
+    Logger::info('invoice.paid_mock', "Invoice #$invoiceId marked as PAID via mock $payMethod", $user['email'], [
+        'invoice_id' => $invoiceId,
+        'method' => $payMethod
+    ]);
+    
+    respond(['success' => true]);
+}
+
 // ── 404 ───────────────────────────────────────────────────────────────────────
 respond(['error' => 'Not found', 'path' => $path], 404);

@@ -971,48 +971,66 @@
   <div class="page-header">
     <div>
       <h2 class="page-title">Мої рахунки</h2>
-      <p class="page-sub">Історія рахунків та їх статус.</p>
-    </div>
-  </div>
-  
-  <div id="invoices-alert" style="margin-bottom:24px; padding:16px; border-radius:var(--radius); font-weight:600; display:none;"></div>
-  
-  <div class="stat-grid" style="margin-bottom: 24px;">
-    <div class="stat-card">
-      <div class="stat-label">Всього рахунків</div>
-      <div class="stat-value" id="inv-stat-total">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label" style="color:var(--yellow)">Неоплачені</div>
-      <div class="stat-value" id="inv-stat-unpaid">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label" style="color:var(--green)">Оплачені</div>
-      <div class="stat-value" id="inv-stat-paid">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label" style="color:var(--muted)">Відмінені</div>
-      <div class="stat-value" id="inv-stat-cancelled">0</div>
+      <p class="page-sub">Перегляд та оплата виставлених рахунків.</p>
     </div>
   </div>
 
-  <div class="panel">
-    <div class="table-container">
-      <table class="table" id="invoices-table">
-        <thead>
-          <tr>
-            <th>Рахунок #</th>
-            <th>Дата створення</th>
-            <th>Термін оплати</th>
-            <th>Сума</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
-        </tbody>
-      </table>
+  <div style="display:flex; gap:24px; align-items:flex-start;">
+
+    <!-- Sidebar: status filters -->
+    <div id="inv-sidebar" style="width:200px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
+      <div style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
+
+      <div id="inv-filter-all" class="inv-filter-item active" onclick="filterInvoices('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--accent);">Усі</span>
+        <span id="inv-count-all" style="font-size:12px; font-weight:700; background:var(--border2); color:var(--text); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-unpaid" class="inv-filter-item" onclick="filterInvoices('unpaid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Неоплачені</span>
+        <span id="inv-count-unpaid" style="font-size:12px; font-weight:700; background:rgba(245,200,66,.15); color:var(--yellow); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-paid" class="inv-filter-item" onclick="filterInvoices('paid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Оплачені</span>
+        <span id="inv-count-paid" style="font-size:12px; font-weight:700; background:rgba(34,211,160,.15); color:var(--green); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-cancelled" class="inv-filter-item" onclick="filterInvoices('cancelled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Відмінені</span>
+        <span id="inv-count-cancelled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-refunded" class="inv-filter-item" onclick="filterInvoices('refunded')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Повернено</span>
+        <span id="inv-count-refunded" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
     </div>
+
+    <!-- Right: invoice table -->
+    <div style="flex:1; min-width:0;">
+      <div id="invoices-alert" style="margin-bottom:16px; padding:14px 18px; border-radius:var(--radius); font-weight:600; display:none;"></div>
+
+      <div class="panel">
+        <div class="table-container">
+          <table class="table" id="invoices-table">
+            <thead>
+              <tr>
+                <th>Рахунок #</th>
+                <th>Дата</th>
+                <th>Термін</th>
+                <th>Сума</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1184,6 +1202,74 @@
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeCreateInvoiceModal()">Скасувати</button>
       <button class="btn btn-primary btn-sm" style="width:auto" onclick="submitCreateInvoice()">Створити</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PAY INVOICE (Details & Choice) -->
+<div class="modal-backdrop" id="modal-pay-invoice">
+  <div class="modal" style="max-width: 500px;">
+    <button class="modal-close" onclick="closePayInvoiceModal()">✕</button>
+    <div class="modal-title">Деталі рахунку</div>
+    
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:24px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <span style="color:var(--muted)">Номер рахунку:</span>
+        <strong id="pi-id">—</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <span style="color:var(--muted)">Сума до сплати:</span>
+        <strong id="pi-amount">—</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <span style="color:var(--muted)">Дата створення:</span>
+        <span id="pi-date">—</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <span style="color:var(--muted)">Термін оплати:</span>
+        <span id="pi-due">—</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:var(--muted)">Статус:</span>
+        <span id="pi-status">—</span>
+      </div>
+    </div>
+    
+    <div id="pi-methods-container" style="display:flex; flex-direction:column; gap:12px;">
+      <!-- Payment method buttons will be loaded here -->
+    </div>
+    
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="btn btn-ghost btn-sm" onclick="closePayInvoiceModal()">Закрити</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CHECKOUT SIMULATOR -->
+<div class="modal-backdrop" id="modal-checkout-simulator" style="z-index: 110;">
+  <div class="modal" style="max-width: 440px; text-align: center; border: 1px solid var(--accent);">
+    <div style="font-size: 40px; margin-bottom: 16px;" id="sim-icon">💳</div>
+    <div class="modal-title" id="sim-title" style="margin-bottom: 8px;">Симуляція оплати</div>
+    <div style="font-size: 13px; color: var(--muted); margin-bottom: 24px;" id="sim-subtitle">Тестовий платіжний шлюз</div>
+    
+    <div style="background: var(--bg); border: 1px solid var(--border2); border-radius: 12px; padding: 20px; margin-bottom: 28px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+        <span style="color: var(--muted);">Призначення:</span>
+        <span id="sim-desc">Оплата рахунку #--</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700;">
+        <span style="color: var(--muted);">Сума:</span>
+        <span id="sim-amount" style="color: var(--green);">0.00 EUR</span>
+      </div>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="btn btn-primary" onclick="confirmSimulatedPayment()" id="btn-confirm-sim" style="background: var(--green);">
+        Підтвердити оплату
+      </button>
+      <button class="btn btn-ghost" onclick="closeCheckoutSimulator()">
+        Скасувати платіж
+      </button>
     </div>
   </div>
 </div>
@@ -2265,23 +2351,58 @@ async function changeTicketStatus(ticketId) {
 // ═══════════════════════════════════════════
 async function loadSettings() {
   const el = document.getElementById('settings-content');
+  
+  let adminSettingsHtml = '';
+  if (userRole === 'admin') {
+    adminSettingsHtml = `
+      <div style="max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px;">
+        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;">Активні методи оплати</h3>
+        <div class="field" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <label style="margin: 0; cursor: pointer;" for="pay-toggle-paddle">Paddle (Global Card/PayPal)</label>
+          <input type="checkbox" id="pay-toggle-paddle" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="field" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <label style="margin: 0; cursor: pointer;" for="pay-toggle-monobank">Monobank (Україна)</label>
+          <input type="checkbox" id="pay-toggle-monobank" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="field" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <label style="margin: 0; cursor: pointer;" for="pay-toggle-wayforpay">WayForPay (Україна)</label>
+          <input type="checkbox" id="pay-toggle-wayforpay" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <button class="btn btn-primary" onclick="savePaymentSettings()">Зберегти методи оплати</button>
+      </div>
+    `;
+  }
+
   el.innerHTML = `
-    <div style="max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px;">
-      <div class="field">
-        <label>Ім'я</label>
-        <input type="text" id="settings-name" placeholder="Ім'я">
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <div style="max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px;">
+        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;">Профіль користувача</h3>
+        <div class="field">
+          <label>Ім'я</label>
+          <input type="text" id="settings-name" placeholder="Ім'я">
+        </div>
+        <div class="field">
+          <label>Новий пароль (залиште порожнім, щоб не змінювати)</label>
+          <input type="password" id="settings-password" placeholder="мінімум 6 символів">
+        </div>
+        <div class="error-msg" id="settings-error"></div>
+        <button class="btn btn-primary" onclick="saveSettings()">Зберегти налаштування</button>
       </div>
-      <div class="field">
-        <label>Новий пароль (залиште порожнім, щоб не змінювати)</label>
-        <input type="password" id="settings-password" placeholder="мінімум 6 символів">
-      </div>
-      <div class="error-msg" id="settings-error"></div>
-      <button class="btn btn-primary" onclick="saveSettings()">Зберегти налаштування</button>
+      ${adminSettingsHtml}
     </div>
   `;
   try {
     const me = await apiFetch('/auth/me');
     document.getElementById('settings-name').value = me.name || me.email.split('@')[0];
+    
+    if (userRole === 'admin') {
+      const data = await apiFetch('/admin/settings');
+      const pm = data.payment_methods || {};
+      document.getElementById('pay-toggle-paddle').checked = !!pm.paddle;
+      document.getElementById('pay-toggle-monobank').checked = !!pm.monobank;
+      document.getElementById('pay-toggle-wayforpay').checked = !!pm.wayforpay;
+    }
   } catch (e) {
     document.getElementById('settings-error').textContent = e.message;
     document.getElementById('settings-error').classList.add('show');
@@ -2302,6 +2423,20 @@ async function saveSettings() {
     showErr(err, e.message);
   }
 }
+
+async function savePaymentSettings() {
+  const pm = {
+    paddle: document.getElementById('pay-toggle-paddle').checked,
+    monobank: document.getElementById('pay-toggle-monobank').checked,
+    wayforpay: document.getElementById('pay-toggle-wayforpay').checked
+  };
+  try {
+    await apiFetch('/admin/settings', 'PUT', { payment_methods: pm });
+    toast('Методи оплати успішно оновлено', 'success');
+  } catch (e) {
+    toast('Не вдалося зберегти налаштування: ' + e.message, 'error');
+  }
+}
 // ═══════════════════════════════════════════
 //  INVOICES
 // ═══════════════════════════════════════════
@@ -2312,49 +2447,85 @@ const invoiceStatusLabels = {
   'refunded': '<span style="color:var(--muted)">Повернено</span>'
 };
 
+let _allInvoices = [];
+let _activeInvoiceFilter = 'all';
+
 async function loadInvoices() {
   const tbody = document.querySelector('#invoices-table tbody');
-  const alertEl = document.getElementById('invoices-alert');
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>';
-  alertEl.style.display = 'none';
-  
+
   try {
     const data = await apiFetch('/client/invoices');
-    
-    document.getElementById('inv-stat-total').textContent = data.stats.total;
-    document.getElementById('inv-stat-unpaid').textContent = data.stats.unpaid;
-    document.getElementById('inv-stat-paid').textContent = data.stats.paid;
-    document.getElementById('inv-stat-cancelled').textContent = data.stats.cancelled;
+    _allInvoices = data.invoices || [];
 
-    if (data.stats.total === 0) {
+    // Count per status
+    const counts = { all: _allInvoices.length, unpaid: 0, paid: 0, cancelled: 0, refunded: 0 };
+    _allInvoices.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
+
+    document.getElementById('inv-count-all').textContent       = counts.all;
+    document.getElementById('inv-count-unpaid').textContent    = counts.unpaid;
+    document.getElementById('inv-count-paid').textContent      = counts.paid;
+    document.getElementById('inv-count-cancelled').textContent = counts.cancelled;
+    document.getElementById('inv-count-refunded').textContent  = counts.refunded;
+
+    // Show alert if all paid or none
+    const alertEl = document.getElementById('invoices-alert');
+    alertEl.style.display = 'none';
+    if (counts.all === 0) {
       alertEl.innerHTML = 'У вас ще немає жодного рахунку.';
       alertEl.style.background = 'var(--border)';
       alertEl.style.color = 'var(--text)';
       alertEl.style.display = 'block';
-    } else if (data.stats.unpaid === 0) {
+    } else if (counts.unpaid === 0) {
       alertEl.innerHTML = '✅ Всі рахунки оплачені.';
-      alertEl.style.background = 'rgba(34, 211, 160, 0.1)';
+      alertEl.style.background = 'rgba(34,211,160,0.1)';
       alertEl.style.color = 'var(--green)';
       alertEl.style.display = 'block';
     }
 
-    if (!data.invoices.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Рахунків не знайдено</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = data.invoices.map(i => `
-      <tr>
-        <td>#${i.id}</td>
-        <td>${fmtDate(i.created_at)}</td>
-        <td>${fmtDate(i.due_date)}</td>
-        <td>${parseFloat(i.amount).toFixed(2)} ${i.currency}</td>
-        <td>${invoiceStatusLabels[i.status] || i.status}</td>
-      </tr>
-    `).join('');
+    filterInvoices(_activeInvoiceFilter);
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red)">Помилка: ${e.message}</td></tr>`;
   }
+}
+
+function filterInvoices(status) {
+  _activeInvoiceFilter = status;
+
+  // Update sidebar active state
+  ['all','unpaid','paid','cancelled','refunded'].forEach(s => {
+    const el = document.getElementById('inv-filter-' + s);
+    if (!el) return;
+    const labelEl = el.querySelector('span:first-child');
+    if (s === status) {
+      el.style.borderLeft = '3px solid var(--accent)';
+      el.style.background = 'rgba(79,142,247,.06)';
+      labelEl.style.color = 'var(--accent)';
+    } else {
+      el.style.borderLeft = '3px solid transparent';
+      el.style.background = 'transparent';
+      labelEl.style.color = 'var(--muted)';
+    }
+  });
+
+  const tbody = document.querySelector('#invoices-table tbody');
+  const filtered = status === 'all' ? _allInvoices : _allInvoices.filter(i => i.status === status);
+
+  if (!filtered.length) {
+    const labels = { unpaid:'неоплачених', paid:'оплачених', cancelled:'відмінених', refunded:'повернених', all:'рахунків' };
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає ${labels[status] || status}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(i => `
+    <tr style="cursor:pointer;" onclick="openPayInvoiceModal(${i.id}, ${i.amount}, '${i.currency}', '${i.status}', '${i.created_at}', '${i.due_date}')">
+      <td><b>#${i.id}</b></td>
+      <td>${fmtDate(i.created_at)}</td>
+      <td>${fmtDate(i.due_date)}</td>
+      <td>${parseFloat(i.amount).toFixed(2)} ${i.currency}</td>
+      <td>${invoiceStatusLabels[i.status] || i.status}</td>
+    </tr>
+  `).join('');
 }
 
 async function loadAdminInvoices() {
@@ -2444,6 +2615,155 @@ function fmtDate(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
   return d.toLocaleDateString('uk-UA');
+}
+
+// ═══════════════════════════════════════════
+//  INVOICE PAYMENT & CHECKOUT SIMULATOR
+// ═══════════════════════════════════════════
+let currentSimulatedInvoice = null;
+
+async function openPayInvoiceModal(id, amount, currency, status, created_at, due_date) {
+  const container = document.getElementById('pi-methods-container');
+  if (container) {
+    container.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження методів оплати…</div>';
+  }
+  
+  const idEl = document.getElementById('pi-id');
+  if (idEl) idEl.textContent = '#' + id;
+  
+  const amountEl = document.getElementById('pi-amount');
+  if (amountEl) amountEl.textContent = parseFloat(amount).toFixed(2) + ' ' + currency;
+  
+  const dateEl = document.getElementById('pi-date');
+  if (dateEl) dateEl.textContent = fmtDate(created_at);
+  
+  const dueEl = document.getElementById('pi-due');
+  if (dueEl) dueEl.textContent = fmtDate(due_date);
+  
+  const statusEl = document.getElementById('pi-status');
+  if (statusEl) statusEl.innerHTML = invoiceStatusLabels[status] || status;
+  
+  const modal = document.getElementById('modal-pay-invoice');
+  if (modal) modal.classList.add('open');
+  
+  if (status !== 'unpaid') {
+    if (container) {
+      container.innerHTML = '<div style="text-align:center;color:var(--green);font-weight:700;padding:20px 0;">✓ Цей рахунок вже оплачено.</div>';
+    }
+    return;
+  }
+  
+  try {
+    const data = await apiFetch('/client/settings');
+    const pm = data.payment_methods || {};
+    
+    let html = '';
+    let hasMethods = false;
+    
+    if (pm.paddle) {
+      hasMethods = true;
+      html += `
+        <button class="btn btn-primary" style="background:#4f8ef7; width:100%; margin:0;" onclick="payInvoice(${id}, ${amount}, '${currency}', 'paddle')">
+          💳 Оплатити через Paddle (Global Card)
+        </button>
+      `;
+    }
+    
+    if (pm.monobank) {
+      hasMethods = true;
+      html += `
+        <button class="btn btn-primary" style="background:#e51937; width:100%; margin:0;" onclick="payInvoice(${id}, ${amount}, '${currency}', 'monobank')">
+          🐱 Оплатити через Monobank (Україна)
+        </button>
+      `;
+    }
+    
+    if (pm.wayforpay) {
+      hasMethods = true;
+      html += `
+        <button class="btn btn-primary" style="background:#ff9900; width:100%; margin:0;" onclick="payInvoice(${id}, ${amount}, '${currency}', 'wayforpay')">
+          ⚡ Оплатити через WayForPay (Україна)
+        </button>
+      `;
+    }
+    
+    if (!hasMethods) {
+      html = '<div style="text-align:center;color:var(--muted);padding:10px 0;">Наразі немає доступних методів оплати. Зверніться до адміністратора.</div>';
+    }
+    
+    if (container) container.innerHTML = html;
+  } catch (e) {
+    if (container) {
+      container.innerHTML = '<div style="text-align:center;color:var(--red);padding:10px 0;">Не вдалося завантажити платіжні методи.</div>';
+    }
+  }
+}
+
+function closePayInvoiceModal() {
+  const modal = document.getElementById('modal-pay-invoice');
+  if (modal) modal.classList.remove('open');
+}
+
+function payInvoice(id, amount, currency, method) {
+  currentSimulatedInvoice = { id, amount, currency, method };
+  
+  const iconMap = {
+    paddle: '💳',
+    monobank: '🐱',
+    wayforpay: '⚡'
+  };
+  const titleMap = {
+    paddle: 'Paddle Checkout',
+    monobank: 'Monobank Pay',
+    wayforpay: 'WayForPay Gateway'
+  };
+  
+  const simIcon = document.getElementById('sim-icon');
+  if (simIcon) simIcon.textContent = iconMap[method] || '💳';
+  
+  const simTitle = document.getElementById('sim-title');
+  if (simTitle) simTitle.textContent = titleMap[method] || 'Симуляція оплати';
+  
+  const simDesc = document.getElementById('sim-desc');
+  if (simDesc) simDesc.textContent = `Оплата рахунку #${id}`;
+  
+  const simAmount = document.getElementById('sim-amount');
+  if (simAmount) simAmount.textContent = parseFloat(amount).toFixed(2) + ' ' + currency;
+  
+  const modal = document.getElementById('modal-checkout-simulator');
+  if (modal) modal.classList.add('open');
+}
+
+function closeCheckoutSimulator() {
+  const modal = document.getElementById('modal-checkout-simulator');
+  if (modal) modal.classList.remove('open');
+  currentSimulatedInvoice = null;
+}
+
+async function confirmSimulatedPayment() {
+  if (!currentSimulatedInvoice) return;
+  const { id, method } = currentSimulatedInvoice;
+  
+  const btn = document.getElementById('btn-confirm-sim');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Обробка платежу…';
+  }
+  
+  try {
+    await apiFetch(`/client/invoices/${id}/pay-mock`, 'POST', { method });
+    toast('Платіж успішно здійснено!', 'success');
+    closeCheckoutSimulator();
+    closePayInvoiceModal();
+    loadInvoices();
+  } catch (e) {
+    toast('Помилка оплати: ' + e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Підтвердити оплату';
+    }
+  }
 }
 
 </script>
