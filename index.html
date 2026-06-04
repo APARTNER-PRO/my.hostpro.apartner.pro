@@ -1145,6 +1145,8 @@
       <button class="btn btn-ghost btn-sm" onclick="closeEditModal()">Скасувати</button>
       <button class="btn btn-primary btn-sm" style="width:auto" onclick="updateClient()">Зберегти зміни</button>
     </div>
+  </div>
+</div>
 <!-- ═══════════════════════════════════════════
      MODAL: CREATE INVOICE
 ═══════════════════════════════════════════ -->
@@ -2383,35 +2385,57 @@ async function openCreateInvoiceModal() {
   try {
     const data = await apiFetch('/admin/users');
     const select = document.getElementById('ci-user-id');
+    if (!select) throw new Error("Елемент 'ci-user-id' не знайдено в DOM");
+    
     select.innerHTML = data.users.map(u => `<option value="${u.id}">${escHtml(u.email)} ${u.name ? `(${escHtml(u.name)})` : ''}</option>`).join('');
     
-    document.getElementById('ci-amount').value = '';
-    document.getElementById('ci-due-date').value = new Date().toISOString().split('T')[0];
+    const amountInput = document.getElementById('ci-amount');
+    if (amountInput) amountInput.value = '';
     
-    document.getElementById('modal-create-invoice').classList.add('open');
+    const dueDateInput = document.getElementById('ci-due-date');
+    if (dueDateInput) {
+      dueDateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    const modal = document.getElementById('modal-create-invoice');
+    if (!modal) throw new Error("Елемент 'modal-create-invoice' не знайдено в DOM");
+    
+    modal.classList.add('open');
   } catch (e) {
-    toast('Не вдалося завантажити користувачів', 'error');
+    console.error('Помилка при відкритті модального вікна створення рахунку:', e);
+    toast('Не вдалося завантажити користувачів: ' + e.message, 'error');
   }
 }
 
 function closeCreateInvoiceModal() {
-  document.getElementById('modal-create-invoice').classList.remove('open');
+  const modal = document.getElementById('modal-create-invoice');
+  if (modal) modal.classList.remove('open');
 }
 
 async function submitCreateInvoice() {
-  const payload = {
-    user_id: document.getElementById('ci-user-id').value,
-    amount: document.getElementById('ci-amount').value,
-    currency: document.getElementById('ci-currency').value,
-    due_date: document.getElementById('ci-due-date').value
-  };
-
   try {
+    const userIdEl = document.getElementById('ci-user-id');
+    const amountEl = document.getElementById('ci-amount');
+    const currencyEl = document.getElementById('ci-currency');
+    const dueDateEl = document.getElementById('ci-due-date');
+
+    if (!userIdEl || !amountEl || !currencyEl || !dueDateEl) {
+      throw new Error("Не всі поля форми рахунку знайдено в DOM");
+    }
+
+    const payload = {
+      user_id: userIdEl.value,
+      amount: amountEl.value,
+      currency: currencyEl.value,
+      due_date: dueDateEl.value
+    };
+
     await apiFetch('/admin/invoices', 'POST', payload);
     toast('Рахунок успішно створено', 'success');
     closeCreateInvoiceModal();
     loadAdminInvoices();
   } catch (e) {
+    console.error('Помилка при створенні рахунку:', e);
     toast(e.message, 'error');
   }
 }
