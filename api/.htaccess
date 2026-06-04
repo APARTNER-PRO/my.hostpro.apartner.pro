@@ -1,0 +1,12 @@
+Options -Indexes
+RewriteEngine On
+
+# Pass the Authorization header
+RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Пропускаємо реальні файли
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Всі запити → index.php, зберігаємо query string
+RewriteRule ^ index.php [QSA,L]

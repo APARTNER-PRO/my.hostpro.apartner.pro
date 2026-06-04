@@ -1,0 +1,201 @@
+<?php
+
+class PaddleService
+{
+    private string $apiKey;
+    private string $baseUrl;
+
+    public function __construct()
+    {
+        $cfg = require __DIR__ . '/../config/config.php';
+
+        // trim() критично — ключ з .env може мати \n або пробіли
+        $this->apiKey  = trim($cfg['paddle_api_key']);
+        $this->baseUrl = rtrim(trim($cfg['paddle_api_url']), '/');
+    }
+
+    public function getSubscriptionsByEmail(string $email): array
+    {
+        // Paddle Billing v2 — шукаємо customer за email
+        $customers = $this->request('GET', '/customers', ['email' => urlencode($email), 'per_page' => 10]);
+
+        // Якщо помилка аутентифікації або інша — кидаємо щоб вище спіймали
+        if (isset($customers['error'])) {
+            $code   = $customers['error']['code']   ?? 'unknown';
+            $detail = $customers['error']['detail']  ?? 'Paddle API error';
+            throw new \RuntimeException("Paddle API error [{$code}]: {$detail}");
+        }
+
+        if (!empty($customers['data'])) {
+            $customerId = $customers['data'][0]['id'];
+            $subs = $this->request('GET', '/subscriptions', [
+                'customer_id' => $customerId,
+                'per_page'    => 50,
+            ]);
+
+            if (isset($subs['error'])) {
+                throw new \RuntimeException('Paddle subscriptions error: ' . ($subs['error']['detail'] ?? 'unknown'));
+            }
+
+            $result = [];
+            foreach ($subs['data'] ?? [] as $sub) {
+                $result[] = $this->normalizeBillingV2($sub);
+            }
+            return $result;
+        }
+
+        // Fallback: Classic v1
+        return $this->classicSubscriptionsByEmail($email);
+    }
+
+    // ── Debug: повертає сирий стан підключення до Paddle ─────────────────────
+    public function debugConnection(): array
+    {
+        $keyLen    = strlen($this->apiKey);
+        $keyPrefix = $keyLen > 8 ? substr($this->apiKey, 0, 4) . '...' . substr($this->apiKey, -4) : '(short)';
+        $hasSpaces = $this->apiKey !== trim($this->apiKey);
+        $hasNewline= str_contains($this->apiKey, "\n") || str_contains($this->apiKey, "\r");
+
+        $raw = $this->requestRaw('GET', '/customers', ['per_page' => 1]);
+
+        return [
+            'key_length'   => $keyLen,
+            'key_preview'  => $keyPrefix,
+            'has_spaces'   => $hasSpaces,
+            'has_newline'  => $hasNewline,
+            'api_url'      => $this->baseUrl,
+            'http_code'    => $raw['http_code'],
+            'response'     => $raw['body'],
+        ];
+    }
+
+    // ── Paddle Billing v2 normalizer ──────────────────────────────────────────
+    private function normalizeBillingV2(array $sub): array
+    {
+        $item    = $sub['items'][0] ?? [];
+        $price   = $item['price']   ?? [];
+        $product = $item['product'] ?? [];
+
+        $nextBilling = $sub['next_billed_at'] ?? null;
+        $endsAt      = $sub['current_billing_period']['ends_at']    ?? $nextBilling;
+        $startsAt    = $sub['current_billing_period']['starts_at']  ?? $sub['started_at'] ?? null;
+
+        $amount = null;
+        if (isset($price['unit_price']['amount'], $price['unit_price']['currency_code'])) {
+            $amount = number_format((int)$price['unit_price']['amount'] / 100, 2) . ' '
+                    . strtoupper($price['unit_price']['currency_code']);
+        }
+
+        return [
+            'id'           => $sub['id']     ?? null,
+            'status'       => $sub['status'] ?? 'unknown',
+            'plan_name'    => $product['name'] ?? $price['description'] ?? 'Plan',
+            'plan_id'      => $price['id']     ?? null,
+            'amount'       => $amount,
+            'interval'     => $price['billing_cycle']['interval'] ?? null,
+            'started_at'   => $startsAt,
+            'expires_at'   => $endsAt,
+            'next_payment' => $nextBilling,
+            'cancel_url'   => $sub['management_urls']['cancel']                ?? null,
+            'update_url'   => $sub['management_urls']['update_payment_method'] ?? null,
+            'api_version'  => 'v2',
+        ];
+    }
+
+    // ── Paddle Classic v1 ─────────────────────────────────────────────────────
+    private function classicSubscriptionsByEmail(string $email): array
+    {
+        $vendorId = trim($_ENV['PADDLE_VENDOR_ID'] ?? '');
+        if (!$vendorId) return []; // Classic не налаштовано
+
+        $url  = 'https://vendors.paddle.com/api/2.0/subscription/users';
+        $body = http_build_query([
+            'vendor_id'        => $vendorId,
+            'vendor_auth_code' => $this->apiKey,
+        ]);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $body,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
+        ]);
+        $raw = curl_exec($ch);
+        curl_close($ch);
+
+        $data = json_decode($raw, true);
+        if (empty($data['success']) || empty($data['response'])) return [];
+
+        $result = [];
+        foreach ($data['response'] as $sub) {
+            if (strtolower($sub['user_email'] ?? '') !== strtolower($email)) continue;
+            $result[] = $this->normalizeClassicV1($sub);
+        }
+        return $result;
+    }
+
+    private function normalizeClassicV1(array $sub): array
+    {
+        return [
+            'id'           => (string)($sub['subscription_id'] ?? ''),
+            'status'       => $sub['state'] ?? 'unknown',
+            'plan_name'    => $sub['plan_name'] ?? 'Plan',
+            'plan_id'      => (string)($sub['plan_id'] ?? ''),
+            'amount'       => ($sub['last_payment']['amount'] ?? '') . ' ' . strtoupper($sub['last_payment']['currency'] ?? ''),
+            'interval'     => null,
+            'started_at'   => $sub['signup_date']        ?? null,
+            'expires_at'   => $sub['next_payment']['date'] ?? null,
+            'next_payment' => $sub['next_payment']['date'] ?? null,
+            'cancel_url'   => $sub['cancel_url']  ?? null,
+            'update_url'   => $sub['update_url']  ?? null,
+            'api_version'  => 'v1',
+        ];
+    }
+
+    // ── HTTP helpers ──────────────────────────────────────────────────────────
+    private function request(string $method, string $path, array $params = []): array
+    {
+        $raw = $this->requestRaw($method, $path, $params);
+        $decoded = json_decode($raw['body'], true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function requestRaw(string $method, string $path, array $params = []): array
+    {
+        $url = $this->baseUrl . $path;
+        if ($method === 'GET' && $params) {
+            $url .= '?' . http_build_query($params);
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST  => $method,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $this->apiKey,
+                'Content-Type: application/json',
+                'Paddle-Version: 1',
+            ],
+        ]);
+
+        if ($method !== 'GET' && $params) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
+        }
+
+        $body = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+
+        return [
+            'http_code' => $code,
+            'body'      => $body ?: '',
+            'curl_err'  => $err,
+        ];
+    }
+}
+

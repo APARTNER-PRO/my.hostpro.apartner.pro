@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billing Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0c0f;
+    --surface:   #111418;
+    --border:    #1e2329;
+    --border2:   #2a3040;
+    --text:      #e8eaf0;
+    --muted:     #5a6478;
+    --accent:    #4f8ef7;
+    --accent2:   #7c5df7;
+    --green:     #22d3a0;
+    --yellow:    #f5c842;
+    --red:       #f75a5a;
+    --radius:    12px;
+    --font:      'Syne', sans-serif;
+    --mono:      'DM Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; flex-direction: column; min-height: 100vh; position: relative; z-index: 1; }
+  .page.active { display: flex; }
+
+  /* ══════════════════════════════════════
+     LOGIN PAGE
+  ══════════════════════════════════════ */
+  #page-login {
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(79,142,247,.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .login-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .login-logo span { color: var(--accent); }
+
+  .login-title {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .login-sub {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 36px;
+  }
+
+  .field { margin-bottom: 18px; }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 13px 16px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,142,247,.12);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all .2s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    width: 100%;
+  }
+  .btn-primary:hover { background: #3a7ae8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,142,247,.3); }
+  .btn-primary:active { transform: none; }
+  .btn-primary:disabled { opacity: .5; cursor: default; transform: none; box-shadow: none; }
+
+  .btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger { background: rgba(247,90,90,.15); color: var(--red); border: 1px solid rgba(247,90,90,.3); }
+  .btn-danger:hover { background: rgba(247,90,90,.25); }
+
+  .error-msg {
+    background: rgba(247,90,90,.1);
+    border: 1px solid rgba(247,90,90,.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--red);
+    margin-top: 16px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* ══════════════════════════════════════
+     MAIN LAYOUT
+  ══════════════════════════════════════ */
+  #page-app {
+    flex-direction: row;
+  }
+
+  .sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo {
+    padding: 0 24px 28px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo span { color: var(--accent); }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,.02); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(79,142,247,.06); }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .user-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .user-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .main {
+    flex: 1;
+    padding: 40px 48px;
+    overflow-y: auto;
+    min-width: 0;
+  }
+
+  /* ── Views ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Page headers ── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 800;
+  }
+
+  .page-desc {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 40px 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 0;
+    color: var(--muted);
+  }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ══════════════════════════════════════
+     SUBSCRIPTION CARDS
+  ══════════════════════════════════════ */
+  .sub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+
+  .sub-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .sub-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+  .sub-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .sub-card:hover::after { opacity: 1; }
+
+  .sub-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .sub-plan {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .sub-amount {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .status-active    { background: rgba(34,211,160,.12); color: var(--green); }
+  .status-trialing  { background: rgba(245,200,66,.12); color: var(--yellow); }
+  .status-past_due  { background: rgba(247,90,90,.12);  color: var(--red); }
+  .status-canceled  { background: rgba(90,100,120,.12); color: var(--muted); }
+  .status-paused    { background: rgba(90,100,120,.12); color: var(--muted); }
+  .status-unknown   { background: rgba(90,100,120,.12); color: var(--muted); }
+
+  .sub-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .meta-item label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .meta-item span {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .sub-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* ══════════════════════════════════════
+     ADMIN CLIENTS TABLE
+  ══════════════════════════════════════ */
+  .table-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.01);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,.02); }
+
+  tbody td {
+    padding: 14px 20px;
+    font-size: 13px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  .td-email { font-family: var(--mono); }
+  .td-date  { font-family: var(--mono); color: var(--muted); font-size: 12px; }
+
+  .td-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+  /* ── Modal ── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 36px;
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+  }
+
+  .modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 24px;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 20px; right: 20px;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--border);
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .modal-close:hover { background: var(--border2); color: var(--text); }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    justify-content: flex-end;
+  }
+
+  .modal-footer .btn { width: auto; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 9999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    max-width: 340px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(34,211,160,.4); color: var(--green); }
+  #toast.error   { border-color: rgba(247,90,90,.4);  color: var(--red); }
+
+  /* ── WHM status block ── */
+  .whm-block {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .whm-block.created  { background: rgba(34,211,160,.08); border: 1px solid rgba(34,211,160,.25); color: var(--green); }
+  .whm-block.existed  { background: rgba(79,142,247,.08); border: 1px solid rgba(79,142,247,.2);  color: var(--accent); }
+  .whm-block.error    { background: rgba(247,90,90,.08);  border: 1px solid rgba(247,90,90,.25);  color: var(--red); }
+  .whm-block .whm-icon { font-size: 16px; flex-shrink: 0; }
+  .whm-block strong    { font-weight: 700; display: block; margin-bottom: 2px; }
+  .whm-block span      { opacity: .8; font-family: var(--mono); }
+
+  /* ── Select ── */
+  .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 13px 16px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6478' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,142,247,.12);
+  }
+  .field select option { background: #1a1e26; }
+
+  /* ── Plan badge ── */
+  .plan-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: .04em;
+    background: rgba(124,93,247,.12);
+    color: var(--accent2);
+    border: 1px solid rgba(124,93,247,.25);
+  }
+
+  /* ── Plan picker (inline radio-style buttons) ── */
+  .plan-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .plan-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all .15s;
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+  .plan-option:hover { border-color: var(--accent); background: rgba(79,142,247,.04); }
+  .plan-option.selected { border-color: var(--accent2); background: rgba(124,93,247,.08); color: var(--accent2); }
+  .plan-option .plan-radio {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+  .plan-option.selected .plan-radio { border-color: var(--accent2); background: var(--accent2); }
+
+  /* ── Role tag ── */
+  .role-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .role-admin  { background: rgba(124,93,247,.15); color: var(--accent2); }
+  .role-client { background: rgba(79,142,247,.1);  color: var(--accent); }
+
+  /* ── Log tabs ── */
+  .log-tab {
+    padding: 7px 18px;
+    border-radius: 7px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    transition: all .15s;
+  }
+  .log-tab.active { background: var(--border2); color: var(--text); }
+  .log-tab:hover:not(.active) { color: var(--text); }
+
+  .log-level-info    { color: var(--accent); }
+  .log-level-warning { color: var(--yellow); }
+  .log-level-error   { color: var(--red); }
+  .log-status-ok      { color: var(--green); }
+  .log-status-error   { color: var(--red); }
+  .log-status-ignored { color: var(--muted); }
+
+  .status-open      { background: rgba(79,142,247,.12); color: var(--accent); }
+  .status-pending   { background: rgba(245,200,66,.12); color: var(--yellow); }
+  .status-replied   { background: rgba(34,211,160,.12); color: var(--green); }
+  .status-closed    { background: rgba(90,100,120,.12); color: var(--muted); }
+
+  /* ── Tickets Styles ── */
+  .ticket-chat {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 24px 0;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  .chat-msg {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px;
+    border-radius: 16px;
+    max-width: 85%;
+    line-height: 1.5;
+    font-size: 14px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  }
+  .chat-msg.client {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(79,142,247,.12) 0%, rgba(124,93,247,.08) 100%);
+    border: 1px solid rgba(79,142,247,.2);
+    border-bottom-right-radius: 4px;
+  }
+  .chat-msg.admin {
+    align-self: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-bottom-left-radius: 4px;
+  }
+  .chat-msg.admin::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    background: linear-gradient(135deg, var(--accent2), transparent);
+    z-index: -1;
+    opacity: 0.15;
+    pointer-events: none;
+  }
+  .chat-msg-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .chat-msg-sender {
+    color: var(--text);
+  }
+  .chat-msg-sender.sender-admin {
+    color: var(--accent2);
+    font-weight: 700;
+  }
+  .chat-msg-time {
+    font-family: var(--mono);
+  }
+  .chat-msg-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .ticket-reply-box {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .ticket-detail-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { padding: 24px 20px; }
+    .sub-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: LOGIN
+═══════════════════════════════════════════ -->
+<div id="page-login" class="page active">
+  <div class="login-card">
+    <div class="login-logo"><span>●</span> BILLING PORTAL</div>
+    <div class="login-title">Вхід в систему</div>
+    <div class="login-sub">Введіть дані для доступу до кабінету</div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Пароль</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">
+      <span id="login-btn-text">Увійти</span>
+    </button>
+
+    <div class="error-msg" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: APP
+═══════════════════════════════════════════ -->
+<div id="page-app" class="page">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Billing<span>·</span>Portal</div>
+
+    <!-- Client nav -->
+    <div id="nav-client">
+      <div class="nav-item active" onclick="showView('billing')">
+        <span class="nav-icon">💳</span> Моя підписка
+      </div>
+      <div class="nav-item" onclick="showView('tickets'); loadTickets()">
+        <span class="nav-icon">🎫</span> Підтримка
+      </div>
+      <div class="nav-item" onclick="showView('invoices'); loadInvoices()">
+        <span class="nav-icon">🧾</span> Мої рахунки
+      </div>
+      <div class="nav-item" onclick="showView('settings'); loadSettings()">
+        <span class="nav-icon">⚙️</span> Налаштування
+      </div>
+    </div>
+
+    <!-- Admin nav -->
+    <div id="nav-admin" style="display:none">
+      <div class="nav-item active" onclick="showView('admin-billing')">
+        <span class="nav-icon">🔍</span> Перевірка білінгу
+      </div>
+      <div class="nav-item" onclick="showView('admin-clients')">
+        <span class="nav-icon">👥</span> Клієнти
+      </div>
+      <div class="nav-item" onclick="showView('admin-tickets'); loadAdminTickets()">
+        <span class="nav-icon">🎫</span> Тікети підтримки
+      </div>
+      <div class="nav-item" onclick="showView('admin-invoices'); loadAdminInvoices()">
+        <span class="nav-icon">🧾</span> Управління рахунками
+      </div>
+      <div class="nav-item" onclick="showView('admin-logs'); loadLogs()">
+        <span class="nav-icon">📋</span> Логи
+      </div>
+      <div class="nav-item" onclick="showView('settings'); loadSettings()">
+        <span class="nav-icon">⚙️</span> Налаштування
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar-letter">?</div>
+        <div class="user-email" id="sidebar-email">—</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="doLogout()">Вийти</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- ── VIEW: CLIENT BILLING ── -->
+    <div class="view active" id="view-billing">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Моя підписка</div>
+          <div class="page-desc">Активні тарифи та терміни дії</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadBilling()">↻ Оновити</button>
+      </div>
+      <div id="billing-content">
+        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: ADMIN BILLING LOOKUP ── -->
+    <div class="view" id="view-admin-billing">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Перевірка білінгу</div>
+          <div class="page-desc">Подивитись підписки будь-якого клієнта</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:28px;align-items:flex-end">
+        <div class="field" style="flex:1;margin:0">
+          <label>Email клієнта</label>
+          <input type="email" id="admin-lookup-email" placeholder="client@example.com">
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:auto;height:44px" onclick="adminLookup()">Знайти</button>
+      </div>
+
+      <div id="admin-billing-content"></div>
+    </div>
+
+    <!-- ── VIEW: ADMIN CLIENTS ── -->
+    <div class="view" id="view-admin-clients">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Клієнти</div>
+          <div class="page-desc">Управління акаунтами клієнтів</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+          + Новий клієнт
+        </button>
+      </div>
+
+      <div id="clients-content">
+        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: ADMIN LOGS ── -->
+    <div class="view" id="view-admin-logs">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Журнал подій</div>
+          <div class="page-desc">Логи авторизацій, WHM, Paddle, вебхуків</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="log-level-filter" class="field" style="margin:0;width:auto"
+            onchange="loadLogs()">
+            <option value="">Всі рівні</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:2px;margin-bottom:24px;background:var(--surface);
+        border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content">
+        <button class="log-tab active" id="tab-events" onclick="switchLogTab('events')">
+          📋 Події
+        </button>
+        <button class="log-tab" id="tab-webhooks" onclick="switchLogTab('webhooks')">
+          🔗 Webhook
+        </button>
+      </div>
+
+      <div id="logs-content">
+        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+      </div>
+    </div>
+
+    <!-- ── VIEW: CLIENT TICKETS ── -->
+    <div class="view" id="view-tickets">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Служба підтримки</div>
+          <div class="page-desc">Створення запитів та переписка з адміністратором</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateTicketModal()">
+          + Створити тікет
+        </button>
+      </div>
+
+      <div id="tickets-list-container">
+        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+      </div>
+
+      <!-- Ticket Details -->
+      <div id="ticket-detail-container" style="display:none; margin-top:32px;"></div>
+    </div>
+
+    <!-- ── VIEW: ADMIN TICKETS ── -->
+    <div class="view" id="view-admin-tickets">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Тікети підтримки</div>
+          <div class="page-desc">Усі запити від клієнтів</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="admin-ticket-status-filter" class="field" style="margin:0;width:auto" onchange="loadAdminTickets()">
+            <option value="">Всі статуси</option>
+            <option value="open">Open (Новий)</option>
+            <option value="pending">Pending (Клієнт відповів)</option>
+            <option value="replied">Replied (Відповідь надано)</option>
+            <option value="closed">Closed (Закритий)</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadAdminTickets()">↻</button>
+        </div>
+      </div>
+
+      <div id="admin-tickets-list-container">
+        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+      </div>
+
+      <!-- Admin Ticket Details -->
+      <div id="admin-ticket-detail-container" style="display:none; margin-top:32px;"></div>
+    </div>
+
+<!-- ══════════════════════════════════════════════
+     VIEW: SETTINGS
+════════════════════════════════════════════════ -->
+<!-- ── VIEW: CLIENT INVOICES ── -->
+<div class="view" id="view-invoices">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Мої рахунки</h2>
+      <p class="page-sub">Історія рахунків та їх статус.</p>
+    </div>
+  </div>
+  
+  <div id="invoices-alert" style="margin-bottom:24px; padding:16px; border-radius:var(--radius); font-weight:600; display:none;"></div>
+  
+  <div class="stat-grid" style="margin-bottom: 24px;">
+    <div class="stat-card">
+      <div class="stat-label">Всього рахунків</div>
+      <div class="stat-value" id="inv-stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" style="color:var(--yellow)">Неоплачені</div>
+      <div class="stat-value" id="inv-stat-unpaid">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" style="color:var(--green)">Оплачені</div>
+      <div class="stat-value" id="inv-stat-paid">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" style="color:var(--muted)">Відмінені</div>
+      <div class="stat-value" id="inv-stat-cancelled">0</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="table-container">
+      <table class="table" id="invoices-table">
+        <thead>
+          <tr>
+            <th>Рахунок #</th>
+            <th>Дата створення</th>
+            <th>Термін оплати</th>
+            <th>Сума</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── VIEW: ADMIN INVOICES ── -->
+<div class="view" id="view-admin-invoices">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Всі рахунки (Адмін)</h2>
+      <p class="page-sub">Керування виставленими рахунками клієнтів.</p>
+    </div>
+    <button class="btn btn-primary" onclick="openCreateInvoiceModal()">+ Створити рахунок</button>
+  </div>
+  <div class="panel">
+    <div class="table-container">
+      <table class="table" id="admin-invoices-table">
+        <thead>
+          <tr>
+            <th>Рахунок #</th>
+            <th>Клієнт</th>
+            <th>Створено</th>
+            <th>Термін</th>
+            <th>Сума</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="view-settings">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Налаштування профілю</div>
+      <div class="page-desc">Змініть ваше ім'я та пароль</div>
+    </div>
+  </div>
+
+  <div id="settings-content">
+    <!-- form will be injected by loadSettings() -->
+  </div>
+</div>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: CREATE TICKET
+═══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-create-ticket">
+  <div class="modal" style="max-width: 500px;">
+    <button class="modal-close" onclick="closeCreateTicketModal()">✕</button>
+    <div class="modal-title">Новий запит підтримки</div>
+
+    <div class="field">
+      <label>Тема запиту</label>
+      <input type="text" id="ticket-subject" placeholder="Коротко опишіть тему">
+    </div>
+    <div class="field">
+      <label>Повідомлення</label>
+      <textarea id="ticket-message" placeholder="Детально опишіть ваше запитання або проблему..." style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
+    </div>
+
+    <div class="error-msg" id="ticket-modal-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeCreateTicketModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="createTicket()">Надіслати запит</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: CREATE CLIENT
+═══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-create">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title">Новий клієнт</div>
+
+    <div class="field">
+      <label>Ім'я</label>
+      <input type="text" id="new-name" placeholder="Іван Іваненко">
+    </div>
+    <div class="field">
+      <label>Email *</label>
+      <input type="email" id="new-email" placeholder="client@example.com">
+    </div>
+    <div class="field">
+      <label>Пароль *</label>
+      <input type="password" id="new-password" placeholder="мін. 6 символів">
+    </div>
+    <div class="field">
+      <label>WHM Пакет хостингу</label>
+      <div class="plan-picker" id="modal-plan-picker">
+        <!-- заповнюється через JS -->
+      </div>
+    </div>
+
+    <div class="error-msg" id="modal-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="createClient()">Створити акаунт</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edit Client -->
+<div class="modal-backdrop" id="modal-edit-client">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <div class="modal-title">Редагувати клієнта</div>
+
+    <div class="field">
+      <label>Ім'я</label>
+      <input type="text" id="edit-name" placeholder="Ім'я клієнта">
+    </div>
+    <div class="field">
+      <label>Пароль (залиште порожнім, щоб не змінювати)</label>
+      <input type="password" id="edit-password" placeholder=" мінімум 6 символів">
+    </div>
+
+    <div class="error-msg" id="edit-modal-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeEditModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="updateClient()">Зберегти зміни</button>
+    </div>
+<!-- ═══════════════════════════════════════════
+     MODAL: CREATE INVOICE
+═══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-create-invoice">
+  <div class="modal" style="max-width: 500px;">
+    <button class="modal-close" onclick="closeCreateInvoiceModal()">✕</button>
+    <div class="modal-title">Новий рахунок</div>
+
+    <div class="field">
+      <label>Оберіть клієнта *</label>
+      <select id="ci-user-id" style="width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius); padding:13px 16px; color:var(--text); font-family:var(--font); font-size:14px; outline:none;"></select>
+    </div>
+    
+    <div class="field">
+      <label>Сума *</label>
+      <input type="number" id="ci-amount" step="0.01" min="0.01" placeholder="10.00">
+    </div>
+
+    <div class="field">
+      <label>Валюта *</label>
+      <select id="ci-currency" style="width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius); padding:13px 16px; color:var(--text); font-family:var(--font); font-size:14px; outline:none;">
+        <option value="EUR">EUR (€)</option>
+        <option value="USD">USD ($)</option>
+        <option value="UAH">UAH (₴)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Термін оплати *</label>
+      <input type="date" id="ci-due-date">
+    </div>
+
+    <div class="error-msg" id="ci-modal-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeCreateInvoiceModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="submitCreateInvoice()">Створити</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG
+//  Всі запити йдуть на /api — Vercel проксує
+//  на бекенд (реальний URL прихований)
+// ═══════════════════════════════════════════
+const API = '/api';
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let token = localStorage.getItem('billing_token');
+let userRole  = null;
+let userEmail = null;
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+(async function init() {
+  if (!token) return showPage('login');
+  try {
+    const me = await apiFetch('/auth/me');
+    setUser(me.email, me.role);
+    showPage('app');
+    if (userRole === 'admin') {
+      loadAdminClients();
+    } else {
+      loadBilling();
+    }
+  } catch {
+    doLogout();
+  }
+})();
+
+// ═══════════════════════════════════════════
+//  WHM PLANS
+// ═══════════════════════════════════════════
+const WHM_PLANS = [
+  { id: 'wedbkrdb_Starter',    label: 'Starter' },
+  { id: 'wedbkrdb_Personal',   label: 'Personal' },
+  { id: 'wedbkrdb_Business',   label: 'Business' },
+  { id: 'wedbkrdb_Agency',     label: 'Agency' },
+  { id: 'wedbkrdb_Agency Pro', label: 'Agency Pro' },
+];
+let selectedPlan = WHM_PLANS[1].id; // default: Personal
+
+function renderPlanPicker(containerId, currentPlan) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = WHM_PLANS.map(p => `
+    <div class="plan-option${p.id === (currentPlan || selectedPlan) ? ' selected' : ''}"
+         onclick="selectPlan('${containerId}', '${p.id}')">
+      <div class="plan-radio"></div>
+      <span>${p.label}</span>
+      <span style="margin-left:auto;font-size:11px;opacity:.5">${p.id}</span>
+    </div>`).join('');
+}
+
+function selectPlan(containerId, planId) {
+  selectedPlan = planId;
+  document.querySelectorAll(`#${containerId} .plan-option`).forEach(el => {
+    el.classList.toggle('selected', el.querySelector('span').textContent === WHM_PLANS.find(p => p.id === planId)?.label);
+  });
+  // re-render for accuracy
+  renderPlanPicker(containerId, planId);
+}
+
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('page-login').classList.contains('active')) doLogin();
+});
+
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const err      = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+
+  err.classList.remove('show');
+  if (!email || !password) { showErr(err, 'Заповніть усі поля'); return; }
+
+  btn.disabled = true;
+  document.getElementById('login-btn-text').textContent = 'Вхід…';
+
+  try {
+    const data = await apiFetch('/auth/login', 'POST', { email, password });
+    token = data.token;
+    localStorage.setItem('billing_token', token);
+    setUser(data.email, data.role);
+    showPage('app');
+    if (userRole === 'admin') {
+      loadAdminClients();
+      if (name === 'admin-logs') loadLogs();
+    }
+    else loadBilling();
+  } catch (e) {
+    showErr(err, e.message || 'Невірний email або пароль');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('login-btn-text').textContent = 'Увійти';
+  }
+}
+
+function doLogout() {
+  token = null;
+  localStorage.removeItem('billing_token');
+  showPage('login');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+// ═══════════════════════════════════════════
+//  BILLING — client
+// ═══════════════════════════════════════════
+async function loadBilling() {
+  const el = document.getElementById('billing-content');
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  try {
+    const data = await apiFetch('/billing');
+    let html = '';
+    if (data.paddle_error) {
+      html += `<div class="whm-block error" style="margin-bottom:16px">
+        <span class="whm-icon">⚠️</span>
+        <div><strong>Paddle API помилка</strong><span>${escHtml(data.paddle_error)}</span></div>
+      </div>`;
+    }
+    html += renderSubs(data.subscriptions, false);
+    if (data.whm) html += renderWhmBlock(data.whm);
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${e.message}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  BILLING — admin lookup
+// ═══════════════════════════════════════════
+async function adminLookup() {
+  const email = document.getElementById('admin-lookup-email').value.trim();
+  const el = document.getElementById('admin-billing-content');
+  if (!email) { el.innerHTML = '<div class="error-msg show">Введіть email</div>'; return; }
+
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Запит до Paddle…</div>';
+  try {
+    const data = await apiFetch(`/admin/billing?email=${encodeURIComponent(email)}`);
+    let html = '';
+    if (data.paddle_error) {
+      html += `<div class="whm-block error" style="margin-bottom:16px">
+        <span class="whm-icon">⚠️</span>
+        <div><strong>Paddle API помилка</strong><span>${escHtml(data.paddle_error)}</span></div>
+      </div>`;
+    }
+    html += renderSubs(data.subscriptions, true);
+    if (data.whm_account !== undefined) {
+      html += renderWhmAdminBlock(data.whm_account, email);
+    }
+    el.innerHTML = html;
+    if (document.getElementById('lookup-plan-picker')) {
+      renderPlanPicker('lookup-plan-picker', selectedPlan);
+    }
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${e.message}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SUBSCRIPTIONS renderer
+// ═══════════════════════════════════════════
+function renderSubs(subs, isAdmin) {
+  if (!subs || subs.length === 0) {
+    return `<div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>Активних підписок не знайдено</p>
+    </div>`;
+  }
+
+  return `<div class="sub-grid">${subs.map(s => renderSubCard(s, isAdmin)).join('')}</div>`;
+}
+
+function renderSubCard(s, isAdmin) {
+  const statusClass = `status-${(s.status || 'unknown').replace('_','-')}`;
+  const statusLabel = {
+    active:    'Активна',
+    trialing:  'Тріал',
+    past_due:  'Прострочена',
+    canceled:  'Скасована',
+    paused:    'Призупинена',
+    unknown:   'Невідомо',
+  }[s.status] || s.status;
+
+  const fmt = v => v ? new Date(v).toLocaleDateString('uk-UA', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const daysLeft = s.expires_at ? Math.ceil((new Date(s.expires_at) - Date.now()) / 86400000) : null;
+  const daysLabel = daysLeft !== null
+    ? (daysLeft > 0 ? `${daysLeft} дн. залишилось` : 'Минув')
+    : '';
+
+  const actions = [];
+  if (s.update_url) actions.push(`<a href="${s.update_url}" target="_blank" class="btn btn-ghost btn-sm">Змінити картку</a>`);
+  if (s.cancel_url) actions.push(`<a href="${s.cancel_url}" target="_blank" class="btn btn-danger btn-sm">Скасувати</a>`);
+
+  return `
+  <div class="sub-card">
+    <div class="sub-header">
+      <div>
+        <div class="sub-plan">${escHtml(s.plan_name)}</div>
+        ${s.amount ? `<div class="sub-amount">${escHtml(s.amount)}${s.interval ? ' / ' + s.interval : ''}</div>` : ''}
+      </div>
+      <span class="status-badge ${statusClass}">${statusLabel}</span>
+    </div>
+
+    <div class="sub-meta">
+      <div class="meta-item">
+        <label>Початок</label>
+        <span>${fmt(s.started_at)}</span>
+      </div>
+      <div class="meta-item">
+        <label>Дійсна до</label>
+        <span>${fmt(s.expires_at)}${daysLabel ? `<br><small style="color:var(--muted);font-size:11px">${daysLabel}</small>` : ''}</span>
+      </div>
+      ${s.next_payment ? `<div class="meta-item">
+        <label>Наступний платіж</label>
+        <span>${fmt(s.next_payment)}</span>
+      </div>` : ''}
+      <div class="meta-item">
+        <label>Джерело</label>
+        <span>Paddle ${s.api_version || ''}</span>
+      </div>
+    </div>
+
+    ${actions.length ? `<div class="sub-actions">${actions.join('')}</div>` : ''}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — clients
+// ═══════════════════════════════════════════
+async function loadAdminClients() {
+  const el = document.getElementById('clients-content');
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  try {
+    const data = await apiFetch('/admin/clients');
+    el.innerHTML = renderClientsTable(data.clients);
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${e.message}</div>`;
+  }
+}
+
+function renderClientsTable(clients) {
+  if (!clients.length) {
+    return `<div class="empty-state"><div class="empty-icon">👥</div><p>Клієнтів ще немає</p></div>`;
+  }
+
+  const rows = clients.map(c => `
+    <tr>
+      <td class="td-email">${escHtml(c.email)}</td>
+      <td>${escHtml(c.name || '—')}</td>
+      <td><span class="role-tag role-${c.role}">${c.role}</span></td>
+      <td class="td-date">${new Date(c.created_at).toLocaleDateString('uk-UA')}</td>
+      <td class="td-actions">
+        <button class="btn btn-ghost btn-sm" onclick="lookupClient('${escHtml(c.email)}')">Підписки</button>
+        <button class="btn btn-ghost btn-sm" onclick="openProvisionModal('${escHtml(c.email)}')">🖥 WHM</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEditClientModal(${c.id}, '${escHtml(c.email)}', '${escHtml(c.name || '')}')">⚙️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteClient(${c.id}, '${escHtml(c.email)}')">✕</button>
+      </td>
+    </tr>`).join('');
+
+  return `<div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th>Email</th><th>Ім'я</th><th>Роль</th><th>Дата реєстрації</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function lookupClient(email) {
+  showView('admin-billing');
+  document.getElementById('admin-lookup-email').value = email;
+  adminLookup();
+}
+
+async function deleteClient(id, email) {
+  if (!confirm(`Видалити акаунт ${email}?`)) return;
+  try {
+    await apiFetch(`/admin/clients/${id}`, 'DELETE');
+    toast('Клієнта видалено', 'success');
+    loadAdminClients();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MODAL — create client
+// ═══════════════════════════════════════════
+function openCreateModal() {
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-email').value = '';
+  document.getElementById('new-password').value = '';
+  document.getElementById('modal-error').classList.remove('show');
+  selectedPlan = WHM_PLANS[1].id; // reset to Personal
+  renderPlanPicker('modal-plan-picker', selectedPlan);
+  document.getElementById('modal-create').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-create').classList.remove('open');
+}
+
+async function createClient() {
+  const name     = document.getElementById('new-name').value.trim();
+  const email    = document.getElementById('new-email').value.trim();
+  const password = document.getElementById('new-password').value;
+  const plan     = selectedPlan;
+  const err      = document.getElementById('modal-error');
+
+  err.classList.remove('show');
+  if (!email || !password) { showErr(err, 'Email та пароль обов\'язкові'); return; }
+
+  try {
+    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan });
+    closeModal();
+    const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
+    let msg = `Акаунт ${email} створено`;
+    if (res.whm?.created)  msg += ` · WHM: ${res.whm.username} (${planLabel})`;
+    if (res.whm?.existed)  msg += ` · WHM акаунт вже є`;
+    toast(msg, 'success');
+    loadAdminClients();
+  } catch (e) {
+    showErr(err, e.message);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  LOGS
+// ═══════════════════════════════════════════
+let currentLogTab = 'events';
+
+function switchLogTab(tab) {
+  currentLogTab = tab;
+  document.querySelectorAll('.log-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  loadLogs();
+}
+
+async function loadLogs() {
+  const el    = document.getElementById('logs-content');
+  const level = document.getElementById('log-level-filter')?.value || '';
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+
+  try {
+    if (currentLogTab === 'webhooks') {
+      const data = await apiFetch('/admin/webhook-logs?limit=100');
+      el.innerHTML = renderWebhookLogs(data.logs);
+    } else {
+      const params = new URLSearchParams({ limit: 200 });
+      if (level) params.set('level', level);
+      const data = await apiFetch('/admin/logs?' + params);
+      el.innerHTML = renderEventLogs(data.logs);
+    }
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${e.message}</div>`;
+  }
+}
+
+function renderEventLogs(logs) {
+  if (!logs.length) return `<div class="empty-state"><div class="empty-icon">📋</div><p>Логів немає</p></div>`;
+
+  const rows = logs.map(l => {
+    const ctx = l.context ? (() => { try { return JSON.parse(l.context); } catch { return {}; } })() : {};
+    const ctxStr = Object.keys(ctx).length
+      ? Object.entries(ctx).map(([k,v]) => `${k}: ${JSON.stringify(v)}`).join(' · ')
+      : '';
+    return `<tr>
+      <td class="td-date">${fmtDatetime(l.created_at)}</td>
+      <td><span class="log-level-${l.level}" style="font-weight:700;font-size:11px;
+        text-transform:uppercase">${l.level}</span></td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--accent)">${escHtml(l.event)}</td>
+      <td class="td-email" style="font-size:12px">${escHtml(l.email || '—')}</td>
+      <td style="font-size:12px">${escHtml(l.message)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--muted);max-width:200px;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(ctxStr)}">${escHtml(ctxStr)}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="table-wrapper" style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Час</th><th>Рівень</th><th>Подія</th><th>Email</th><th>Повідомлення</th><th>Контекст</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderWebhookLogs(logs) {
+  if (!logs.length) return `<div class="empty-state"><div class="empty-icon">🔗</div><p>Webhook подій немає</p></div>`;
+
+  const rows = logs.map(l => `<tr>
+    <td class="td-date">${fmtDatetime(l.processed_at)}</td>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--accent2)">${escHtml(l.event_type)}</td>
+    <td class="td-email" style="font-size:12px">${escHtml(l.email || '—')}</td>
+    <td><span class="log-status-${l.status}" style="font-weight:700;font-size:11px;
+      text-transform:uppercase">${l.status}</span></td>
+    <td style="font-size:12px;color:var(--red);max-width:200px;overflow:hidden;
+      text-overflow:ellipsis;white-space:nowrap">${escHtml(l.error || '')}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${escHtml(l.paddle_id || '—')}</td>
+  </tr>`).join('');
+
+  return `<div class="table-wrapper" style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Час</th><th>Подія</th><th>Email</th><th>Статус</th><th>Помилка</th><th>Paddle ID</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function fmtDatetime(str) {
+  if (!str) return '—';
+  return new Date(str).toLocaleString('uk-UA', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
+}
+
+// ═══════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+
+  const navContainer = userRole === 'admin' ? '#nav-admin' : '#nav-client';
+  const items = document.querySelectorAll(navContainer + ' .nav-item');
+  
+  let idx = 0;
+  if (userRole === 'admin') {
+    const adminMap = {
+      'admin-billing': 0,
+      'admin-clients': 1,
+      'admin-tickets': 2,
+      'admin-logs':    3,
+      'settings':      4
+    };
+    idx = adminMap[name];
+  } else {
+    const clientMap = {
+      'billing':  0,
+      'tickets':  1,
+      'settings': 2
+    };
+    idx = clientMap[name];
+  }
+  if (items[idx]) items[idx].classList.add('active');
+}
+
+function setUser(email, role) {
+  userEmail = email;
+  userRole  = role;
+  document.getElementById('sidebar-email').textContent = email;
+  document.getElementById('user-avatar-letter').textContent = email[0].toUpperCase();
+
+  if (role === 'admin') {
+    document.getElementById('nav-admin').style.display  = 'block';
+    document.getElementById('nav-client').style.display = 'none';
+  }
+}
+
+function showErr(el, msg) {
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ═══════════════════════════════════════════
+//  WHM STATUS RENDERERS
+// ═══════════════════════════════════════════
+function renderWhmBlock(whm) {
+  if (!whm) return '';
+
+  if (whm.error) return `
+    <div class="whm-block error" style="margin-top:20px">
+      <span class="whm-icon">⚠️</span>
+      <div><strong>WHM помилка</strong><span>${escHtml(whm.error)}</span></div>
+    </div>`;
+
+  if (whm.created) return `
+    <div class="whm-block created" style="margin-top:20px">
+      <span class="whm-icon">✅</span>
+      <div>
+        <strong>Хостинг акаунт створено</strong>
+        <span>Домен: ${escHtml(whm.domain || '')} · Логін: ${escHtml(whm.username || '')}</span>
+      </div>
+    </div>`;
+
+  if (whm.existed) {
+    const acc = whm.account || {};
+    return `
+    <div class="whm-block existed" style="margin-top:20px">
+      <span class="whm-icon">🖥️</span>
+      <div>
+        <strong>Хостинг акаунт активний</strong>
+        <span>${escHtml(acc.domain || acc.login || 'cPanel акаунт знайдено')}</span>
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
+function renderWhmAdminBlock(account, email) {
+  const planPickerHtml = `
+    <div style="margin-top:10px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+        color:var(--muted);margin-bottom:8px">Пакет хостингу</div>
+      <div class="plan-picker" id="lookup-plan-picker"></div>
+    </div>`;
+
+  if (account === null) {
+    return `
+    <div style="margin-top:20px;background:var(--surface);border:1px solid var(--border);
+      border-radius:12px;padding:20px 24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)">
+          <span style="font-size:18px">🖥️</span>
+          <span>WHM акаунт <b style="color:var(--text)">не знайдено</b> для цього email</span>
+        </div>
+      </div>
+      ${planPickerHtml}
+      <div style="margin-top:14px">
+        <button class="btn btn-primary btn-sm" style="width:auto"
+          onclick="provisionWhm('${escHtml(email)}')">+ Створити в WHM</button>
+      </div>
+    </div>`;
+  }
+
+  if (account && account.error) return `
+    <div class="whm-block error" style="margin-top:20px">
+      <span class="whm-icon">⚠️</span>
+      <div><strong>WHM помилка</strong><span>${escHtml(account.error)}</span></div>
+    </div>`;
+
+  if (account) {
+    const planLabel = WHM_PLANS.find(p => p.id === account.plan)?.label || account.plan || '—';
+    return `
+    <div style="margin-top:20px;background:var(--surface);border:1px solid var(--border);
+      border-radius:12px;padding:20px 24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">🖥️</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px">WHM акаунт активний</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">
+              ${escHtml(account.domain || '—')} · ${escHtml(account.user || account.login || '—')}
+            </div>
+          </div>
+        </div>
+        <span class="plan-badge">${escHtml(planLabel)}</span>
+      </div>
+      <div style="margin-top:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+          color:var(--muted);margin-bottom:8px">Змінити пакет</div>
+        <div class="plan-picker" id="lookup-plan-picker"></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px"
+          onclick="provisionWhm('${escHtml(email)}')">Застосувати пакет</button>
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
+async function provisionWhm(email) {
+  const plan = selectedPlan;
+  try {
+    const res = await apiFetch('/admin/billing/provision', 'POST', { email, plan });
+    const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
+    if (res.created) {
+      toast(`WHM акаунт створено: ${res.username} · пакет: ${planLabel}`, 'success');
+    } else if (res.existed) {
+      toast('Акаунт вже існує в WHM', 'success');
+    } else {
+      toast(res.error || 'Помилка', 'error');
+    }
+    adminLookup();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// Відкрити WHM провізіонування прямо з таблиці клієнтів
+function openProvisionModal(email) {
+  showView('admin-billing');
+  document.getElementById('admin-lookup-email').value = email;
+  adminLookup();
+}
+
+// ═════════════════════════════════════════════
+//  MODAL — edit client
+// ═════════════════════════════════════════════
+function openEditClientModal(id, email, name) {
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-password').value = '';
+  document.getElementById('edit-modal-error').classList.remove('show');
+  document.getElementById('modal-edit-client').dataset.clientId = id;
+  document.getElementById('modal-edit-client').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('modal-edit-client').classList.remove('open');
+}
+
+async function updateClient() {
+  const clientId   = document.getElementById('modal-edit-client').dataset.clientId;
+  const name       = document.getElementById('edit-name').value.trim();
+  const password   = document.getElementById('edit-password').value;
+  const err        = document.getElementById('edit-modal-error');
+
+  err.classList.remove('show');
+  if (!name && !password) { showErr(err, 'Заповніть хоча б одне поле'); return; }
+
+  try {
+    const res = await apiFetch(`/admin/clients/${clientId}`, 'PUT', { name, password });
+    closeEditModal();
+    toast('Клієнта оновлено', 'success');
+    loadAdminClients();
+  } catch (e) {
+    showErr(err, e.message);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  API CLIENT
+// ═══════════════════════════════════════════
+async function apiFetch(path, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body)  opts.body = JSON.stringify(body);
+
+  const res  = await fetch(API + path, opts);
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+// ═══════════════════════════════════════════
+//  TICKETS — client
+// ═══════════════════════════════════════════
+async function loadTickets() {
+  const el = document.getElementById('tickets-list-container');
+  const detailsEl = document.getElementById('ticket-detail-container');
+  detailsEl.style.display = 'none';
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  try {
+    const data = await apiFetch('/tickets');
+    el.innerHTML = renderTicketsTableClient(data.tickets);
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${e.message}</div>`;
+  }
+}
+
+function renderTicketsTableClient(tickets) {
+  if (!tickets || tickets.length === 0) {
+    return `
+      <div class="empty-state">
+        <div class="empty-icon">🎫</div>
+        <p>У вас ще немає створених запитів підтримки</p>
+      </div>
+    `;
+  }
+
+  const rows = tickets.map(t => {
+    const statusClass = `status-${t.status}`;
+    const statusLabel = {
+      open:    'Новий',
+      pending: 'Очікує відповіді',
+      replied: 'Відповідь надано',
+      closed:  'Закритий',
+    }[t.status] || t.status;
+
+    return `
+      <tr style="cursor:pointer;" onclick="loadTicketDetails(${t.id})">
+        <td style="font-weight:700;">${escHtml(t.subject)}</td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+        <td class="td-date">${fmtDatetime(t.created_at)}</td>
+        <td class="td-date">${fmtDatetime(t.updated_at)}</td>
+        <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="padding:4px 10px;">Перегляд</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Тема</th><th>Статус</th><th>Створено</th><th>Оновлено</th><th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openCreateTicketModal() {
+  document.getElementById('ticket-subject').value = '';
+  document.getElementById('ticket-message').value = '';
+  document.getElementById('ticket-modal-error').classList.remove('show');
+  document.getElementById('modal-create-ticket').classList.add('open');
+}
+
+function closeCreateTicketModal() {
+  document.getElementById('modal-create-ticket').classList.remove('open');
+}
+
+async function createTicket() {
+  const subject = document.getElementById('ticket-subject').value.trim();
+  const message = document.getElementById('ticket-message').value.trim();
+  const err = document.getElementById('ticket-modal-error');
+
+  err.classList.remove('show');
+  if (!subject || !message) { showErr(err, 'Введіть тему та повідомлення'); return; }
+
+  try {
+    const res = await apiFetch('/tickets', 'POST', { subject, message });
+    closeCreateTicketModal();
+    toast('Запит успішно створено', 'success');
+    loadTickets();
+    loadTicketDetails(res.id);
+  } catch (e) {
+    showErr(err, e.message);
+  }
+}
+
+async function loadTicketDetails(id) {
+  const detailsEl = document.getElementById('ticket-detail-container');
+  detailsEl.style.display = 'block';
+  detailsEl.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження деталей…</div>';
+  detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const data = await apiFetch(`/tickets/${id}`);
+    const ticket = data.ticket;
+    const messages = data.messages;
+
+    const statusLabel = {
+      open:    'Новий',
+      pending: 'Очікує відповіді',
+      replied: 'Відповідь надано',
+      closed:  'Закритий',
+    }[ticket.status] || ticket.status;
+
+    let chatHtml = messages.map(m => {
+      const isClient = m.sender_role === 'client';
+      const roleLabel = isClient ? 'Ви' : 'Підтримка';
+      const senderClass = isClient ? 'sender-client' : 'sender-admin';
+      const msgClass = isClient ? 'client' : 'admin';
+      return `
+        <div class="chat-msg ${msgClass}">
+          <div class="chat-msg-meta">
+            <span class="chat-msg-sender ${senderClass}">${roleLabel}</span>
+            <span class="chat-msg-time">${fmtDatetime(m.created_at)}</span>
+          </div>
+          <div class="chat-msg-text">${escHtml(m.message)}</div>
+        </div>
+      `;
+    }).join('');
+
+    const replyFormHtml = ticket.status !== 'closed' ? `
+      <div class="ticket-reply-box">
+        <div class="field" style="margin:0 0 12px 0;">
+          <label>Швидка відповідь</label>
+          <textarea id="reply-message-${ticket.id}" placeholder="Напишіть вашу відповідь тут..." style="width:100%;height:80px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <button class="btn btn-danger btn-sm" onclick="closeTicket(${ticket.id})">Закрити запит</button>
+          <button class="btn btn-primary btn-sm" style="width:auto;" onclick="sendTicketReply(${ticket.id})">Надіслати відповідь</button>
+        </div>
+      </div>
+    ` : `
+      <div style="padding: 20px; background: rgba(90,100,120,.05); border: 1px dashed var(--border); border-radius: 12px; text-align: center; color: var(--muted); margin-top:20px;">
+        Цей запит закритий і знаходиться в архіві.
+      </div>
+    `;
+
+    detailsEl.innerHTML = `
+      <div class="ticket-detail-header">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h3 style="font-size:18px; font-weight:800; color:var(--text);">${escHtml(ticket.subject)}</h3>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">Тікет #${ticket.id} · Створено: ${fmtDatetime(ticket.created_at)}</div>
+          </div>
+          <span class="status-badge status-${ticket.status}">${statusLabel}</span>
+        </div>
+      </div>
+      <div class="ticket-chat">${chatHtml}</div>
+      ${replyFormHtml}
+    `;
+
+    const chatDiv = detailsEl.querySelector('.ticket-chat');
+    if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+
+  } catch (e) {
+    detailsEl.innerHTML = `<div class="error-msg show">Не вдалося завантажити деталі тікета: ${e.message}</div>`;
+  }
+}
+
+async function sendTicketReply(ticketId) {
+  const textarea = document.getElementById(`reply-message-${ticketId}`);
+  const message = textarea.value.trim();
+  if (!message) return;
+
+  try {
+    await apiFetch(`/tickets/${ticketId}/messages`, 'POST', { message });
+    toast('Відповідь надіслано', 'success');
+    loadTicketDetails(ticketId);
+    loadTickets();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function closeTicket(ticketId) {
+  if (!confirm('Ви дійсно бажаєте закрити цей запит?')) return;
+  try {
+    await apiFetch(`/tickets/${ticketId}/close`, 'POST');
+    toast('Запит закритий', 'success');
+    loadTicketDetails(ticketId);
+    loadTickets();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  TICKETS — admin
+// ═══════════════════════════════════════════
+async function loadAdminTickets() {
+  const el = document.getElementById('admin-tickets-list-container');
+  const detailsEl = document.getElementById('admin-ticket-detail-container');
+  detailsEl.style.display = 'none';
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+
+  try {
+    const data = await apiFetch('/admin/tickets');
+    const filterStatus = document.getElementById('admin-ticket-status-filter')?.value || '';
+    
+    let filteredTickets = data.tickets;
+    if (filterStatus) {
+      filteredTickets = filteredTickets.filter(t => t.status === filterStatus);
+    }
+
+    el.innerHTML = renderTicketsTableAdmin(filteredTickets);
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${e.message}</div>`;
+  }
+}
+
+function renderTicketsTableAdmin(tickets) {
+  if (!tickets || tickets.length === 0) {
+    return `
+      <div class="empty-state">
+        <div class="empty-icon">🎫</div>
+        <p>Запитів підтримки не знайдено</p>
+      </div>
+    `;
+  }
+
+  const rows = tickets.map(t => {
+    const statusClass = `status-${t.status}`;
+    const statusLabel = {
+      open:    'Open (Новий)',
+      pending: 'Pending (Клієнт)',
+      replied: 'Replied (Адмін)',
+      closed:  'Closed (Закритий)',
+    }[t.status] || t.status;
+
+    return `
+      <tr style="cursor:pointer;" onclick="loadAdminTicketDetails(${t.id})">
+        <td style="font-family:var(--mono); font-size:12px;">${escHtml(t.client_email)}</td>
+        <td style="font-weight:700;">${escHtml(t.subject)}</td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+        <td class="td-date">${fmtDatetime(t.created_at)}</td>
+        <td class="td-date">${fmtDatetime(t.updated_at)}</td>
+        <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="padding:4px 10px;">Відповісти</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Клієнт</th><th>Тема</th><th>Статус</th><th>Створено</th><th>Оновлено</th><th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function loadAdminTicketDetails(id) {
+  const detailsEl = document.getElementById('admin-ticket-detail-container');
+  detailsEl.style.display = 'block';
+  detailsEl.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження деталей…</div>';
+  detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const data = await apiFetch(`/admin/tickets/${id}`);
+    const ticket = data.ticket;
+    const messages = data.messages;
+
+    const statusLabel = {
+      open:    'Новий',
+      pending: 'Очікує відповіді',
+      replied: 'Відповідь надано',
+      closed:  'Закритий',
+    }[ticket.status] || ticket.status;
+
+    let chatHtml = messages.map(m => {
+      const isClient = m.sender_role === 'client';
+      const roleLabel = isClient ? (ticket.client_name ? `${ticket.client_name} (Клієнт)` : 'Клієнт') : 'Адміністратор';
+      const senderClass = isClient ? 'sender-client' : 'sender-admin';
+      const msgClass = isClient ? 'client' : 'admin';
+      return `
+        <div class="chat-msg ${msgClass}">
+          <div class="chat-msg-meta">
+            <span class="chat-msg-sender ${senderClass}">${roleLabel}</span>
+            <span class="chat-msg-time">${fmtDatetime(m.created_at)}</span>
+          </div>
+          <div class="chat-msg-text">${escHtml(m.message)}</div>
+        </div>
+      `;
+    }).join('');
+
+    const statusOptions = ['open', 'pending', 'replied', 'closed'].map(st => {
+      const label = {
+        open:    'Новий (Open)',
+        pending: 'Очікує відповіді (Pending)',
+        replied: 'Відповідь надано (Replied)',
+        closed:  'Закритий (Closed)'
+      }[st];
+      return `<option value="${st}"${st === ticket.status ? ' selected' : ''}>${label}</option>`;
+    }).join('');
+
+    detailsEl.innerHTML = `
+      <div class="ticket-detail-header">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h3 style="font-size:18px; font-weight:800; color:var(--text);">${escHtml(ticket.subject)}</h3>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+              Тікет #${ticket.id} · Клієнт: <b>${escHtml(ticket.client_email)}</b> (${escHtml(ticket.client_name || '—')})
+              <br>Створено: ${fmtDatetime(ticket.created_at)}
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div class="field" style="margin:0;">
+              <select id="admin-change-status-${ticket.id}" class="field" style="margin:0; width:auto; padding:8px 30px 8px 12px; font-size:13px;" onchange="changeTicketStatus(${ticket.id})">
+                ${statusOptions}
+              </select>
+            </div>
+            <span class="status-badge status-${ticket.status}">${statusLabel}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ticket-chat">${chatHtml}</div>
+      
+      <div class="ticket-reply-box">
+        <div class="field" style="margin:0 0 12px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label style="margin:0;">Відповідь адміністратора</label>
+            <button class="btn btn-ghost btn-sm" id="btn-ai-suggest-${ticket.id}" style="font-size:12px; padding:4px 10px; display:inline-flex; align-items:center; gap:6px;" onclick="suggestAIReply(${ticket.id})">
+              <span>🤖 Авто-відповідь ШІ</span>
+            </button>
+          </div>
+          <textarea id="admin-reply-message-${ticket.id}" placeholder="Напишіть офіційну відповідь від підтримки..." style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
+        </div>
+        <div style="text-align:right;">
+          <button class="btn btn-primary btn-sm" style="width:auto;" onclick="sendAdminTicketReply(${ticket.id})">Надіслати відповідь клієнту</button>
+        </div>
+      </div>
+    `;
+
+    const chatDiv = detailsEl.querySelector('.ticket-chat');
+    if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+
+  } catch (e) {
+    detailsEl.innerHTML = `<div class="error-msg show">Не вдалося завантажити деталі тікета: ${e.message}</div>`;
+  }
+}
+
+async function sendAdminTicketReply(ticketId) {
+  const textarea = document.getElementById(`admin-reply-message-${ticketId}`);
+  const message = textarea.value.trim();
+  if (!message) return;
+
+  try {
+    await apiFetch(`/admin/tickets/${ticketId}/messages`, 'POST', { message });
+    toast('Відповідь успішно надіслано клієнту', 'success');
+    loadAdminTicketDetails(ticketId);
+    loadAdminTickets();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function suggestAIReply(ticketId) {
+  const btn = document.getElementById(`btn-ai-suggest-${ticketId}`);
+  const textarea = document.getElementById(`admin-reply-message-${ticketId}`);
+  if (!btn || !textarea) return;
+
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳ Генерування…</span>';
+
+  try {
+    const res = await apiFetch(`/admin/tickets/${ticketId}/suggest-reply`, 'POST');
+    textarea.value = res.reply;
+    toast(`Відповідь згенерована ШІ (${res.model})`, 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+async function changeTicketStatus(ticketId) {
+  const select = document.getElementById(`admin-change-status-${ticketId}`);
+  const status = select.value;
+
+  try {
+    await apiFetch(`/admin/tickets/${ticketId}/status`, 'POST', { status });
+    toast('Статус тікета оновлено', 'success');
+    loadAdminTicketDetails(ticketId);
+    loadAdminTickets();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════
+async function loadSettings() {
+  const el = document.getElementById('settings-content');
+  el.innerHTML = `
+    <div style="max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px;">
+      <div class="field">
+        <label>Ім'я</label>
+        <input type="text" id="settings-name" placeholder="Ім'я">
+      </div>
+      <div class="field">
+        <label>Новий пароль (залиште порожнім, щоб не змінювати)</label>
+        <input type="password" id="settings-password" placeholder="мінімум 6 символів">
+      </div>
+      <div class="error-msg" id="settings-error"></div>
+      <button class="btn btn-primary" onclick="saveSettings()">Зберегти налаштування</button>
+    </div>
+  `;
+  try {
+    const me = await apiFetch('/auth/me');
+    document.getElementById('settings-name').value = me.name || me.email.split('@')[0];
+  } catch (e) {
+    document.getElementById('settings-error').textContent = e.message;
+    document.getElementById('settings-error').classList.add('show');
+  }
+}
+
+async function saveSettings() {
+  const name = document.getElementById('settings-name').value.trim();
+  const password = document.getElementById('settings-password').value;
+  const err = document.getElementById('settings-error');
+  err.classList.remove('show');
+  if (!name && !password) { showErr(err, 'Заповніть хоча б одне поле'); return; }
+  
+  try {
+    await apiFetch('/auth/profile', 'PUT', { name, password });
+    toast('Профіль успішно оновлено', 'success');
+  } catch (e) {
+    showErr(err, e.message);
+  }
+}
+// ═══════════════════════════════════════════
+//  INVOICES
+// ═══════════════════════════════════════════
+const invoiceStatusLabels = {
+  'unpaid': '<span style="color:var(--yellow)">Неоплачений</span>',
+  'paid': '<span style="color:var(--green)">Оплачений</span>',
+  'cancelled': '<span style="color:var(--muted)">Відмінений</span>',
+  'refunded': '<span style="color:var(--muted)">Повернено</span>'
+};
+
+async function loadInvoices() {
+  const tbody = document.querySelector('#invoices-table tbody');
+  const alertEl = document.getElementById('invoices-alert');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>';
+  alertEl.style.display = 'none';
+  
+  try {
+    const data = await apiFetch('/client/invoices');
+    
+    document.getElementById('inv-stat-total').textContent = data.stats.total;
+    document.getElementById('inv-stat-unpaid').textContent = data.stats.unpaid;
+    document.getElementById('inv-stat-paid').textContent = data.stats.paid;
+    document.getElementById('inv-stat-cancelled').textContent = data.stats.cancelled;
+
+    if (data.stats.total === 0) {
+      alertEl.innerHTML = 'У вас ще немає жодного рахунку.';
+      alertEl.style.background = 'var(--border)';
+      alertEl.style.color = 'var(--text)';
+      alertEl.style.display = 'block';
+    } else if (data.stats.unpaid === 0) {
+      alertEl.innerHTML = '✅ Всі рахунки оплачені.';
+      alertEl.style.background = 'rgba(34, 211, 160, 0.1)';
+      alertEl.style.color = 'var(--green)';
+      alertEl.style.display = 'block';
+    }
+
+    if (!data.invoices.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Рахунків не знайдено</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.invoices.map(i => `
+      <tr>
+        <td>#${i.id}</td>
+        <td>${fmtDate(i.created_at)}</td>
+        <td>${fmtDate(i.due_date)}</td>
+        <td>${parseFloat(i.amount).toFixed(2)} ${i.currency}</td>
+        <td>${invoiceStatusLabels[i.status] || i.status}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red)">Помилка: ${e.message}</td></tr>`;
+  }
+}
+
+async function loadAdminInvoices() {
+  const tbody = document.querySelector('#admin-invoices-table tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>';
+  try {
+    const data = await apiFetch('/admin/invoices');
+    if (!data.invoices.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Рахунків не знайдено</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.invoices.map(i => `
+      <tr>
+        <td>#${i.id}</td>
+        <td>${escHtml(i.client_email)}</td>
+        <td>${fmtDate(i.created_at)}</td>
+        <td>${fmtDate(i.due_date)}</td>
+        <td>${parseFloat(i.amount).toFixed(2)} ${i.currency}</td>
+        <td>${invoiceStatusLabels[i.status] || i.status}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red)">Помилка: ${e.message}</td></tr>`;
+  }
+}
+
+async function openCreateInvoiceModal() {
+  try {
+    const data = await apiFetch('/admin/users');
+    const select = document.getElementById('ci-user-id');
+    select.innerHTML = data.users.map(u => `<option value="${u.id}">${escHtml(u.email)} ${u.name ? `(${escHtml(u.name)})` : ''}</option>`).join('');
+    
+    document.getElementById('ci-amount').value = '';
+    document.getElementById('ci-due-date').value = new Date().toISOString().split('T')[0];
+    
+    document.getElementById('modal-create-invoice').classList.add('open');
+  } catch (e) {
+    toast('Не вдалося завантажити користувачів', 'error');
+  }
+}
+
+function closeCreateInvoiceModal() {
+  document.getElementById('modal-create-invoice').classList.remove('open');
+}
+
+async function submitCreateInvoice() {
+  const payload = {
+    user_id: document.getElementById('ci-user-id').value,
+    amount: document.getElementById('ci-amount').value,
+    currency: document.getElementById('ci-currency').value,
+    due_date: document.getElementById('ci-due-date').value
+  };
+
+  try {
+    await apiFetch('/admin/invoices', 'POST', payload);
+    toast('Рахунок успішно створено', 'success');
+    closeCreateInvoiceModal();
+    loadAdminInvoices();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('uk-UA');
+}
+
+</script>
+</body>
+</html>
