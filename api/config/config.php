@@ -39,6 +39,8 @@ return [
     // Paddle
     // =========================================================================
     'paddle_api_key'        => trim($_ENV['PADDLE_API_KEY'] ?? ''),
+    'paddle_client_token'   => trim($_ENV['PADDLE_CLIENT_TOKEN'] ?? ''),
+    'paddle_env'            => $_ENV['PADDLE_ENV'] ?? 'sandbox',
     'paddle_api_url'        => (($_ENV['PADDLE_ENV'] ?? '') === 'production')
                                     ? 'https://api.paddle.com'
                                     : 'https://sandbox-api.paddle.com',

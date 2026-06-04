@@ -6,6 +6,7 @@
 <title>Billing Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <style>
   :root {
     --bg:        #0a0c0f;
@@ -2657,6 +2658,24 @@ async function openPayInvoiceModal(id, amount, currency, status, created_at, due
     const data = await apiFetch('/client/settings');
     const pm = data.payment_methods || {};
     
+    // Ініціалізація Paddle.js якщо є токен
+    if (data.paddle_client_token && typeof Paddle !== 'undefined') {
+      if (!window.paddleInitialized) {
+        Paddle.Environment.set(data.paddle_env === 'production' ? 'production' : 'sandbox');
+        Paddle.Initialize({ 
+          token: data.paddle_client_token,
+          eventCallback: function(event) {
+            if (event.name === "checkout.completed") {
+              toast('Оплата успішна! Оновлюємо статус...', 'success');
+              closePayInvoiceModal();
+              loadInvoices();
+            }
+          }
+        });
+        window.paddleInitialized = true;
+      }
+    }
+    
     let html = '';
     let hasMethods = false;
     
@@ -2705,6 +2724,31 @@ function closePayInvoiceModal() {
 }
 
 function payInvoice(id, amount, currency, method) {
+  // Реальна оплата через Paddle
+  if (method === 'paddle') {
+    const btn = event.target || event.srcElement;
+    const oldText = btn.innerHTML;
+    btn.innerHTML = '<div class="spinner" style="display:inline-block;width:14px;height:14px;border-width:2px;margin-right:6px;"></div> Зачекайте...';
+    btn.disabled = true;
+    
+    apiFetch(`/client/invoices/${id}/paddle-checkout`, 'POST')
+      .then(resp => {
+        if (resp.transaction_id) {
+          Paddle.Checkout.open({ transactionId: resp.transaction_id });
+        } else {
+          toast('Помилка створення транзакції', 'error');
+        }
+      })
+      .catch(e => toast('Помилка: ' + e.message, 'error'))
+      .finally(() => {
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+      });
+      
+    return;
+  }
+
+  // Симуляція для інших методів (Monobank, WayForPay)
   currentSimulatedInvoice = { id, amount, currency, method };
   
   const iconMap = {

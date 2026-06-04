@@ -172,12 +172,47 @@ class PaddleWebhook
     // ── transaction.completed ─────────────────────────────────────────────────
     private function onTransactionCompleted(array $data, ?string $email): array
     {
-        if (!$email) return ['status' => 'ignored', 'reason' => 'no email'];
-        Logger::info('transaction.completed', 'Transaction completed', $email, [
-            'id'     => $data['id'] ?? null,
-            'status' => $data['status'] ?? null,
+        $transactionId = $data['id'] ?? null;
+        $invoiceId     = (int)($data['custom_data']['invoice_id'] ?? 0);
+
+        Logger::info('transaction.completed', 'Paddle transaction completed', $email, [
+            'transaction_id' => $transactionId,
+            'invoice_id'     => $invoiceId,
+            'status'         => $data['status'] ?? null,
         ]);
-        return ['status' => 'ok', 'action' => 'transaction_logged'];
+
+        // Якщо є invoice_id — оновлюємо статус рахунку в БД
+        if ($invoiceId > 0) {
+            $db   = Database::get();
+            $stmt = $db->prepare('SELECT * FROM invoices WHERE id = ?');
+            $stmt->execute([$invoiceId]);
+            $invoice = $stmt->fetch();
+
+            if ($invoice && $invoice['status'] === 'unpaid') {
+                $db->prepare("UPDATE invoices SET status = 'paid', updated_at = ? WHERE id = ?")
+                   ->execute([date('Y-m-d H:i:s'), $invoiceId]);
+
+                Logger::info('invoice.paid', "Invoice #{$invoiceId} marked as PAID via Paddle", $email, [
+                    'invoice_id'     => $invoiceId,
+                    'transaction_id' => $transactionId,
+                ]);
+
+                // Повідомлення клієнту
+                if ($email) {
+                    try {
+                        $mailer = new Mailer();
+                        $amount = number_format((float)($invoice['amount'] ?? 0), 2) . ' ' . ($invoice['currency'] ?? '');
+                        $mailer->sendInvoicePaidConfirmation($email, $invoiceId, $amount);
+                    } catch (\Throwable $e) {
+                        Logger::warning('mail.failed', 'Could not send paid confirmation: ' . $e->getMessage(), $email);
+                    }
+                }
+            } else {
+                Logger::warning('invoice.not_updated', "Invoice #{$invoiceId} not found or already paid", $email);
+            }
+        }
+
+        return ['status' => 'ok', 'action' => 'invoice_paid', 'invoice_id' => $invoiceId];
     }
 
     // ── ignored ───────────────────────────────────────────────────────────────

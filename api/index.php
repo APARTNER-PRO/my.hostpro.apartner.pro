@@ -926,7 +926,12 @@ if ($method === 'GET' && $path === '/client/settings') {
     $stmt->execute(['payment_methods']);
     $row = $stmt->fetch();
     $methods = $row ? json_decode($row['value'], true) : ['paddle' => true, 'monobank' => false, 'wayforpay' => false];
-    respond(['payment_methods' => $methods]);
+    
+    respond([
+        'payment_methods' => $methods,
+        'paddle_env' => $cfg['paddle_env'] ?? 'sandbox',
+        'paddle_client_token' => $cfg['paddle_client_token'] ?? ''
+    ]);
 }
 
 // ── POST /client/invoices/{id}/pay-mock ──────────────────────────────────────────
@@ -955,6 +960,54 @@ if ($method === 'POST' && preg_match('#^/client/invoices/(\d+)/pay-mock$#', $pat
     ]);
     
     respond(['success' => true]);
+}
+
+// ── POST /client/invoices/{id}/paddle-checkout ────────────────────────────────
+if ($method === 'POST' && preg_match('#^/client/invoices/(\d+)/paddle-checkout$#', $path, $m)) {
+    $user      = AuthMiddleware::requireAuth();
+    $invoiceId = (int)$m[1];
+    $db        = Database::get();
+
+    // Перевірити що рахунок існує і належить клієнту
+    $stmt = $db->prepare('SELECT * FROM invoices WHERE id = ?');
+    $stmt->execute([$invoiceId]);
+    $invoice = $stmt->fetch();
+
+    if (!$invoice) respond(['error' => 'Invoice not found'], 404);
+
+    if ($user['role'] !== 'admin' && (int)$invoice['user_id'] !== (int)$user['sub']) {
+        respond(['error' => 'Access denied'], 403);
+    }
+
+    if ($invoice['status'] !== 'unpaid') {
+        respond(['error' => 'Invoice is not unpaid', 'status' => $invoice['status']], 400);
+    }
+
+    // Отримати email клієнта
+    $userRow = $db->prepare('SELECT email FROM users WHERE id = ?');
+    $userRow->execute([$user['sub']]);
+    $userRecord = $userRow->fetch();
+    $email = $userRecord['email'] ?? $user['email'] ?? '';
+
+    try {
+        $paddle = new PaddleService();
+        $result = $paddle->createTransaction(
+            $invoiceId,
+            (float)$invoice['amount'],
+            $invoice['currency'],
+            $email
+        );
+
+        Logger::info('paddle.checkout_created', "Paddle transaction created for invoice #{$invoiceId}", $email, [
+            'invoice_id'     => $invoiceId,
+            'transaction_id' => $result['transaction_id'],
+        ]);
+
+        respond(['transaction_id' => $result['transaction_id']]);
+    } catch (\RuntimeException $e) {
+        Logger::error('paddle.checkout_error', $e->getMessage(), $email, ['invoice_id' => $invoiceId]);
+        respond(['error' => $e->getMessage()], 502);
+    }
 }
 
 // ── 404 ───────────────────────────────────────────────────────────────────────

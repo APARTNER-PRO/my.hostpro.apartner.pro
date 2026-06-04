@@ -14,6 +14,77 @@ class PaddleService
         $this->baseUrl = rtrim(trim($cfg['paddle_api_url']), '/');
     }
 
+    // ── Створення транзакції для оплати рахунку ───────────────────────────────
+    /**
+     * Створює Paddle transaction для одноразового платежу.
+     *
+     * @param int    $invoiceId     ID рахунку в нашій БД
+     * @param float  $amount        Сума (напр. 99.99)
+     * @param string $currency      ISO код валюти (напр. "USD", "UAH")
+     * @param string $customerEmail Email клієнта
+     * @return array { transaction_id: string }
+     * @throws \RuntimeException
+     */
+    public function createTransaction(
+        int    $invoiceId,
+        float  $amount,
+        string $currency,
+        string $customerEmail
+    ): array {
+        // Paddle зберігає суми в найменших одиницях (cents)
+        // UAH, USD — 2 знаки після коми
+        $amountInCents = (string)(int)round($amount * 100);
+
+        $body = [
+            'items' => [[
+                'quantity' => 1,
+                'price' => [
+                    'name'        => "Invoice #{$invoiceId}",
+                    'description' => "Payment for invoice #{$invoiceId}",
+                    'unit_price'  => [
+                        'amount'        => $amountInCents,
+                        'currency_code' => strtoupper($currency),
+                    ],
+                    'product' => [
+                        'name'         => "Invoice Payment",
+                        'tax_category' => 'standard',
+                    ]
+                ],
+            ]],
+            'custom_data' => [
+                // Custom data values in Paddle must be strings
+                'invoice_id' => (string)$invoiceId,
+            ]
+        ];
+
+        $raw = $this->requestRaw('POST', '/transactions', $body);
+
+        if ($raw['curl_err']) {
+            throw new \RuntimeException('Paddle cURL error: ' . $raw['curl_err']);
+        }
+
+        $resp = json_decode($raw['body'], true);
+
+        if ($raw['http_code'] !== 201 || !isset($resp['data']['id'])) {
+            $errDetail = $resp['error']['detail'] ?? ($resp['error']['code'] ?? $raw['body']);
+            
+            // Extract validation errors if any
+            if (!empty($resp['error']['errors'])) {
+                $valErrors = [];
+                foreach ($resp['error']['errors'] as $e) {
+                    $valErrors[] = ($e['field'] ?? 'unknown') . ': ' . ($e['message'] ?? 'invalid');
+                }
+                $errDetail .= ' | Validation: ' . implode(', ', $valErrors);
+            }
+            
+            throw new \RuntimeException("Paddle transaction error [{$raw['http_code']}]: {$errDetail}");
+        }
+
+        return [
+            'transaction_id' => $resp['data']['id'],
+        ];
+    }
+
     public function getSubscriptionsByEmail(string $email): array
     {
         // Paddle Billing v2 — шукаємо customer за email
