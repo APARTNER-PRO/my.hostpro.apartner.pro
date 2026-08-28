@@ -31,7 +31,7 @@ const vercelConfig = {
   rewrites: [
     {
       source:      '/api/:path*',
-      destination: `${backendUrl}/api/:path*`,
+      destination: '/api/proxy',
     },
   ],
   headers: [
