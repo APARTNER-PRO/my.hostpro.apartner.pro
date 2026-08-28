@@ -119,6 +119,48 @@ class PaddleService
         return $this->classicSubscriptionsByEmail($email);
     }
 
+    public function getTransactionsByEmail(string $email): array
+    {
+        $customers = $this->request('GET', '/customers', ['email' => $email, 'per_page' => 10]);
+
+        if (empty($customers['data'])) {
+            return [];
+        }
+
+        $customerId = $customers['data'][0]['id'];
+        $txns = $this->request('GET', '/transactions', [
+            'customer_id' => $customerId,
+            'per_page'    => 50,
+        ]);
+
+        if (empty($txns['data'])) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($txns['data'] as $txn) {
+            $statusMap = [
+                'completed' => 'paid',
+                'billed'    => 'unpaid',
+                'past_due'  => 'unpaid',
+                'canceled'  => 'cancelled',
+            ];
+            $status = $statusMap[$txn['status']] ?? 'paid';
+            $amount = (float)($txn['details']['totals']['total'] ?? 0) / 100;
+
+            $result[] = [
+                'id'         => $txn['id'],
+                'created_at' => $txn['created_at'],
+                'due_date'   => $txn['billed_at'] ?? $txn['created_at'],
+                'amount'     => $amount,
+                'currency'   => $txn['currency_code'] ?? 'USD',
+                'status'     => $status,
+                'is_paddle'  => true,
+            ];
+        }
+        return $result;
+    }
+
     // ── Debug: повертає сирий стан підключення до Paddle ─────────────────────
     public function debugConnection(): array
     {

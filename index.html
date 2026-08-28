@@ -2520,7 +2520,7 @@ function filterInvoices(status) {
   }
 
   tbody.innerHTML = filtered.map(i => `
-    <tr style="cursor:pointer;" onclick="openPayInvoiceModal(${i.id}, ${i.amount}, '${i.currency}', '${i.status}', '${i.created_at}', '${i.due_date}')">
+    <tr style="cursor:pointer;" onclick="openPayInvoiceModal('${i.id}', ${i.amount}, '${i.currency}', '${i.status}', '${i.created_at}', '${i.due_date}')">
       <td><b>#${i.id}</b></td>
       <td>${fmtDate(i.created_at)}</td>
       <td>${fmtDate(i.due_date)}</td>

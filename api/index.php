@@ -814,6 +814,19 @@ if ($method === 'GET' && preg_match('#^/client/invoices$#', $path)) {
     $stmt->execute([$user['sub']]);
     $invoices = $stmt->fetchAll();
 
+    try {
+        $paddle = new PaddleService();
+        $paddleTxns = $paddle->getTransactionsByEmail($user['email']);
+        
+        $invoices = array_merge($invoices, $paddleTxns);
+        
+        usort($invoices, function($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
+    } catch (\Throwable $e) {
+        // Пропускаємо помилки Paddle, щоб локальні рахунки все одно показалися
+    }
+
     $stats = [
         'unpaid' => 0,
         'paid' => 0,
