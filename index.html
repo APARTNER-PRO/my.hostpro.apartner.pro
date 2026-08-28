@@ -2664,7 +2664,6 @@ const i18n = {
       'txn.draft':     'Чернетка',
       'txn.ready':     'Незавершена',
       'txn.canceled':  'Скасована',
-    ,
       'login.title': 'Вхід в систему',
       'login.subtitle': 'Введіть дані для доступу до кабінету',
       'login.password': 'Пароль',
@@ -2714,7 +2713,7 @@ const i18n = {
       'page.admin_invoices_desc': 'Керування виставленими рахунками клієнтів.',
       'btn.create_invoice': '+ Створити рахунок',
       'table.client': 'Клієнт',
-      'page.settings_desc': 'Змініть ваше ім'я та пароль',
+      'page.settings_desc': 'Змініть ваше ім\'я та пароль',
       'modal.new_ticket': 'Новий запит підтримки',
       'label.ticket_subject': 'Тема запиту',
       'placeholder.ticket_subject': 'Коротко опишіть тему',
@@ -2723,14 +2722,14 @@ const i18n = {
       'btn.cancel': 'Скасувати',
       'btn.send_request': 'Надіслати запит',
       'modal.new_client': 'Новий клієнт',
-      'label.name': 'Ім'я',
+      'label.name': 'Ім\'я',
       'placeholder.name': 'Іван Іваненко',
       'label.password_req': 'Пароль *',
       'placeholder.pwd_min': 'мін. 6 символів',
       'label.whm_plan': 'WHM Пакет хостингу',
       'btn.create_account': 'Створити акаунт',
       'modal.edit_client': 'Редагувати клієнта',
-      'placeholder.client_name': 'Ім'я клієнта',
+      'placeholder.client_name': 'Ім\'я клієнта',
       'label.pwd_optional': 'Пароль (залиште порожнім, щоб не змінювати)',
       'placeholder.pwd_min2': ' мінімум 6 символів',
       'btn.save_changes': 'Зберегти зміни',
@@ -2749,8 +2748,10 @@ const i18n = {
       'modal.sim_title': 'Симуляція оплати',
       'modal.sim_desc': 'Тестовий платіжний шлюз',
       'label.purpose': 'Призначення:',
+      'label.amount': 'Сума:',
       'btn.confirm_pay': 'Підтвердити оплату',
-      'btn.cancel_pay': 'Скасувати платіж'},
+      'btn.cancel_pay': 'Скасувати платіж'
+    },
     en: {
       'status.all': 'All',
       'inv.paid': 'Paid',
@@ -2766,8 +2767,6 @@ const i18n = {
       'txn.draft': 'Draft',
       'txn.ready': 'Incomplete',
       'txn.canceled': 'Canceled',
-    }
-  ,
       'login.title': 'Sign in to the system',
       'login.subtitle': 'Enter your credentials to access the cabinet',
       'login.password': 'Password',
@@ -2852,8 +2851,11 @@ const i18n = {
       'modal.sim_title': 'Payment Simulation',
       'modal.sim_desc': 'Test payment gateway',
       'label.purpose': 'Purpose:',
+      'label.amount': 'Amount:',
       'btn.confirm_pay': 'Confirm Payment',
-      'btn.cancel_pay': 'Cancel Payment'},
+      'btn.cancel_pay': 'Cancel Payment'
+    }
+  },
   t(key) {
     return (this.locales[this.locale] || {})[key] || key;
   },
