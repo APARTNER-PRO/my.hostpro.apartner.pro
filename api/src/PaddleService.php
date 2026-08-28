@@ -102,6 +102,7 @@ class PaddleService
             $subs = $this->request('GET', '/subscriptions', [
                 'customer_id' => $customerId,
                 'per_page'    => 50,
+                'include'     => 'next_transaction',
             ]);
 
             if (isset($subs['error'])) {
@@ -150,11 +151,30 @@ class PaddleService
         $nextBilling = $sub['next_billed_at'] ?? null;
         $endsAt      = $sub['current_billing_period']['ends_at']    ?? $nextBilling;
         $startsAt    = $sub['current_billing_period']['starts_at']  ?? $sub['started_at'] ?? null;
+        $lastPayment = $item['previously_billed_at'] ?? $sub['started_at'] ?? null;
 
+        $currencyCode = strtoupper($sub['currency_code'] ?? $price['unit_price']['currency_code'] ?? 'USD');
         $amount = null;
-        if (isset($price['unit_price']['amount'], $price['unit_price']['currency_code'])) {
-            $amount = number_format((int)$price['unit_price']['amount'] / 100, 2) . ' '
-                    . strtoupper($price['unit_price']['currency_code']);
+        
+        $nextSubtotal = null;
+        $nextTax      = null;
+        $nextTotal    = null;
+        $taxRate      = null;
+
+        if (isset($sub['next_transaction']['details']['totals'])) {
+            $totals = $sub['next_transaction']['details']['totals'];
+            $curr   = strtoupper($totals['currency_code'] ?? $currencyCode);
+            
+            $nextSubtotal = number_format((int)$totals['subtotal'] / 100, 2) . ' ' . $curr;
+            $nextTax      = number_format((int)$totals['tax'] / 100, 2) . ' ' . $curr;
+            $nextTotal    = number_format((int)$totals['total'] / 100, 2) . ' ' . $curr;
+            
+            if (!empty($sub['next_transaction']['details']['tax_rates_used'])) {
+                $taxRate = ((float)$sub['next_transaction']['details']['tax_rates_used'][0]['tax_rate'] * 100) . '%';
+            }
+            $amount = $nextTotal;
+        } elseif (isset($price['unit_price']['amount'])) {
+            $amount = number_format((int)$price['unit_price']['amount'] / 100, 2) . ' ' . $currencyCode;
         }
 
         return [
@@ -163,10 +183,15 @@ class PaddleService
             'plan_name'    => $product['name'] ?? $price['description'] ?? 'Plan',
             'plan_id'      => $price['id']     ?? null,
             'amount'       => $amount,
+            'next_subtotal'=> $nextSubtotal,
+            'next_tax'     => $nextTax,
+            'next_total'   => $nextTotal,
+            'tax_rate'     => $taxRate,
             'interval'     => $price['billing_cycle']['interval'] ?? null,
             'started_at'   => $startsAt,
             'expires_at'   => $endsAt,
             'next_payment' => $nextBilling,
+            'last_payment' => $lastPayment,
             'cancel_url'   => $sub['management_urls']['cancel']                ?? null,
             'update_url'   => $sub['management_urls']['update_payment_method'] ?? null,
             'api_version'  => 'v2',

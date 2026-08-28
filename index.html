@@ -1489,6 +1489,23 @@ function renderSubCard(s, isAdmin) {
       <span class="status-badge ${statusClass}">${statusLabel}</span>
     </div>
 
+    ${s.next_subtotal ? `
+    <div style="background:var(--bg); border:1px solid var(--border2); border-radius:12px; padding:16px; margin-bottom:20px; font-size:13px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span style="color:var(--muted)">Subtotal</span>
+        <span style="font-family:var(--mono)">${s.next_subtotal}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span style="color:var(--muted)">Tax (${s.tax_rate || '0%'})</span>
+        <span style="font-family:var(--mono)">${s.next_tax}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:700; border-top:1px dashed var(--border2); padding-top:8px; margin-top:4px;">
+        <span>Total (inc tax)</span>
+        <span style="font-family:var(--mono); color:var(--green)">${s.next_total}</span>
+      </div>
+    </div>
+    ` : ''}
+
     <div class="sub-meta">
       <div class="meta-item">
         <label>Початок</label>
@@ -1501,6 +1518,10 @@ function renderSubCard(s, isAdmin) {
       ${s.next_payment ? `<div class="meta-item">
         <label>Наступний платіж</label>
         <span>${fmt(s.next_payment)}</span>
+      </div>` : ''}
+      ${s.last_payment ? `<div class="meta-item">
+        <label>Останній платіж</label>
+        <span>${fmt(s.last_payment)}</span>
       </div>` : ''}
       <div class="meta-item">
         <label>Джерело</label>
