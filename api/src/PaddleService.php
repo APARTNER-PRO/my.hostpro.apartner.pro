@@ -88,7 +88,7 @@ class PaddleService
     public function getSubscriptionsByEmail(string $email): array
     {
         // Paddle Billing v2 — шукаємо customer за email
-        $customers = $this->request('GET', '/customers', ['email' => urlencode($email), 'per_page' => 10]);
+        $customers = $this->request('GET', '/customers', ['email' => $email, 'per_page' => 10]);
 
         // Якщо помилка аутентифікації або інша — кидаємо щоб вище спіймали
         if (isset($customers['error'])) {
