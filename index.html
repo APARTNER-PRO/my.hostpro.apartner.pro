@@ -2166,7 +2166,7 @@ function renderTicketsTableClient(tickets) {
         <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
         <td class="td-date">${fmtDatetime(t.created_at)}</td>
         <td class="td-date">${fmtDatetime(t.updated_at)}</td>
-        <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="padding:4px 10px;">Перегляд</button></td>
+        <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="padding:4px 10px;">${i18n.t('btn.view')}</button></td>
       </tr>
     `;
   }).join('');
@@ -2218,7 +2218,7 @@ async function createTicket() {
 async function loadTicketDetails(id) {
   const detailsEl = document.getElementById('ticket-detail-container');
   detailsEl.style.display = 'block';
-  detailsEl.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження деталей…</div>';
+  detailsEl.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading_details')}</div>`;
   detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
@@ -2227,15 +2227,15 @@ async function loadTicketDetails(id) {
     const messages = data.messages;
 
     const statusLabel = {
-      open:    'Новий',
-      pending: 'Очікує відповіді',
-      replied: 'Відповідь надано',
-      closed:  'Закритий',
+      open:    i18n.t('status.open'),
+      pending: i18n.t('status.pending'),
+      replied: i18n.t('status.replied_short'),
+      closed:  i18n.t('status.closed_short'),
     }[ticket.status] || ticket.status;
 
     let chatHtml = messages.map(m => {
       const isClient = m.sender_role === 'client';
-      const roleLabel = isClient ? 'Ви' : '<span data-i18n="nav.support">Підтримка</span>';
+      const roleLabel = isClient ? i18n.t('ticket.role_you') : i18n.t('nav.support');
       const senderClass = isClient ? 'sender-client' : 'sender-admin';
       const msgClass = isClient ? 'client' : 'admin';
       return `
@@ -2252,17 +2252,17 @@ async function loadTicketDetails(id) {
     const replyFormHtml = ticket.status !== 'closed' ? `
       <div class="ticket-reply-box">
         <div class="field" style="margin:0 0 12px 0;">
-          <label>Швидка відповідь</label>
-          <textarea id="reply-message-${ticket.id}" placeholder="Напишіть вашу відповідь тут..." style="width:100%;height:80px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
+          <label>${i18n.t('ticket.quick_reply')}</label>
+          <textarea id="reply-message-${ticket.id}" placeholder="${i18n.t('placeholder.reply_here')}" style="width:100%;height:80px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <button class="btn btn-danger btn-sm" onclick="closeTicket(${ticket.id})">Закрити запит</button>
-          <button class="btn btn-primary btn-sm" style="width:auto;" onclick="sendTicketReply(${ticket.id})">Надіслати відповідь</button>
+          <button class="btn btn-danger btn-sm" onclick="closeTicket(${ticket.id})">${i18n.t('btn.close_ticket')}</button>
+          <button class="btn btn-primary btn-sm" style="width:auto;" onclick="sendTicketReply(${ticket.id})">${i18n.t('btn.send_reply')}</button>
         </div>
       </div>
     ` : `
       <div style="padding: 20px; background: rgba(90,100,120,.05); border: 1px dashed var(--border); border-radius: 12px; text-align: center; color: var(--muted); margin-top:20px;">
-        Цей запит закритий і знаходиться в архіві.
+        ${i18n.t('ticket.closed_notice')}
       </div>
     `;
 
@@ -2271,7 +2271,7 @@ async function loadTicketDetails(id) {
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
           <div>
             <h3 style="font-size:18px; font-weight:800; color:var(--text);">${escHtml(ticket.subject)}</h3>
-            <div style="font-size:12px; color:var(--muted); margin-top:4px;">Тікет #${ticket.id} · Створено: ${fmtDatetime(ticket.created_at)}</div>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">${i18n.t('ticket.ticket_num')} #${ticket.id} · ${i18n.t('table.created')}: ${fmtDatetime(ticket.created_at)}</div>
           </div>
           <span class="status-badge status-${ticket.status}">${statusLabel}</span>
         </div>
@@ -2284,7 +2284,7 @@ async function loadTicketDetails(id) {
     if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
 
   } catch (e) {
-    detailsEl.innerHTML = `<div class="error-msg show">Не вдалося завантажити деталі тікета: ${e.message}</div>`;
+    detailsEl.innerHTML = `<div class="error-msg show">${i18n.t('error.ticket_load')}: ${e.message}</div>`;
   }
 }
 
@@ -2295,7 +2295,7 @@ async function sendTicketReply(ticketId) {
 
   try {
     await apiFetch(`/tickets/${ticketId}/messages`, 'POST', { message });
-    toast('Відповідь надіслано', 'success');
+    toast(i18n.t('toast.reply_sent'), 'success');
     loadTicketDetails(ticketId);
     loadTickets();
   } catch (e) {
@@ -2304,10 +2304,10 @@ async function sendTicketReply(ticketId) {
 }
 
 async function closeTicket(ticketId) {
-  if (!confirm('Ви дійсно бажаєте закрити цей запит?')) return;
+  if (!confirm(i18n.t('confirm.close_ticket'))) return;
   try {
     await apiFetch(`/tickets/${ticketId}/close`, 'POST');
-    toast('Запит закритий', 'success');
+    toast(i18n.t('toast.ticket_closed'), 'success');
     loadTicketDetails(ticketId);
     loadTickets();
   } catch (e) {
@@ -2365,7 +2365,7 @@ function renderTicketsTableAdmin(tickets) {
         <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
         <td class="td-date">${fmtDatetime(t.created_at)}</td>
         <td class="td-date">${fmtDatetime(t.updated_at)}</td>
-        <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="padding:4px 10px;">Відповісти</button></td>
+        <td style="text-align:right;"><button class="btn btn-ghost btn-sm" style="padding:4px 10px;">${i18n.t('btn.reply')}</button></td>
       </tr>
     `;
   }).join('');
@@ -2387,7 +2387,7 @@ function renderTicketsTableAdmin(tickets) {
 async function loadAdminTicketDetails(id) {
   const detailsEl = document.getElementById('admin-ticket-detail-container');
   detailsEl.style.display = 'block';
-  detailsEl.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження деталей…</div>';
+  detailsEl.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading_details')}</div>`;
   detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
@@ -2396,15 +2396,18 @@ async function loadAdminTicketDetails(id) {
     const messages = data.messages;
 
     const statusLabel = {
-      open:    'Новий',
-      pending: 'Очікує відповіді',
-      replied: 'Відповідь надано',
-      closed:  'Закритий',
+      open:    i18n.t('status.open'),
+      pending: i18n.t('status.pending'),
+      replied: i18n.t('status.replied_short'),
+      closed:  i18n.t('status.closed_short'),
     }[ticket.status] || ticket.status;
+
+    const clientLabel = i18n.t('ticket.client_role');
+    const adminLabel = i18n.t('ticket.admin_role');
 
     let chatHtml = messages.map(m => {
       const isClient = m.sender_role === 'client';
-      const roleLabel = isClient ? (ticket.client_name ? `${ticket.client_name} (Клієнт)` : 'Клієнт') : 'Адміністратор';
+      const roleLabel = isClient ? (ticket.client_name ? `${ticket.client_name} (${clientLabel})` : clientLabel) : adminLabel;
       const senderClass = isClient ? 'sender-client' : 'sender-admin';
       const msgClass = isClient ? 'client' : 'admin';
       return `
@@ -2455,15 +2458,15 @@ async function loadAdminTicketDetails(id) {
       <div class="ticket-reply-box">
         <div class="field" style="margin:0 0 12px 0;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <label style="margin:0;">Відповідь адміністратора</label>
+            <label style="margin:0;">${i18n.t('ticket.admin_reply_label')}</label>
             <button class="btn btn-ghost btn-sm" id="btn-ai-suggest-${ticket.id}" style="font-size:12px; padding:4px 10px; display:inline-flex; align-items:center; gap:6px;" onclick="suggestAIReply(${ticket.id})">
-              <span>🤖 Авто-відповідь ШІ</span>
+              <span>🤖 ${i18n.t('ticket.ai_reply')}</span>
             </button>
           </div>
-          <textarea id="admin-reply-message-${ticket.id}" placeholder="Напишіть офіційну відповідь від підтримки..." style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
+          <textarea id="admin-reply-message-${ticket.id}" placeholder="${i18n.t('placeholder.admin_reply')}" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
         </div>
         <div style="text-align:right;">
-          <button class="btn btn-primary btn-sm" style="width:auto;" onclick="sendAdminTicketReply(${ticket.id})">Надіслати відповідь клієнту</button>
+          <button class="btn btn-primary btn-sm" style="width:auto;" onclick="sendAdminTicketReply(${ticket.id})">${i18n.t('btn.send_reply_to_client')}</button>
         </div>
       </div>
     `;
@@ -2472,7 +2475,7 @@ async function loadAdminTicketDetails(id) {
     if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
 
   } catch (e) {
-    detailsEl.innerHTML = `<div class="error-msg show">Не вдалося завантажити деталі тікета: ${e.message}</div>`;
+    detailsEl.innerHTML = `<div class="error-msg show">${i18n.t('error.ticket_load')}: ${e.message}</div>`;
   }
 }
 
@@ -2483,7 +2486,7 @@ async function sendAdminTicketReply(ticketId) {
 
   try {
     await apiFetch(`/admin/tickets/${ticketId}/messages`, 'POST', { message });
-    toast('Відповідь успішно надіслано клієнту', 'success');
+    toast(i18n.t('toast.reply_sent_to_client'), 'success');
     loadAdminTicketDetails(ticketId);
     loadAdminTickets();
   } catch (e) {
@@ -2498,12 +2501,12 @@ async function suggestAIReply(ticketId) {
 
   const originalText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span>⏳ Генерування…</span>';
+  btn.innerHTML = `<span>⏳ ${i18n.t('ticket.generating')}</span>`;
 
   try {
     const res = await apiFetch(`/admin/tickets/${ticketId}/suggest-reply`, 'POST');
     textarea.value = res.reply;
-    toast(`Відповідь згенерована ШІ (${res.model})`, 'success');
+    toast(`${i18n.t('toast.ai_generated')} (${res.model})`, 'success');
   } catch (e) {
     toast(e.message, 'error');
   } finally {
@@ -2518,7 +2521,7 @@ async function changeTicketStatus(ticketId) {
 
   try {
     await apiFetch(`/admin/tickets/${ticketId}/status`, 'POST', { status });
-    toast('Статус тікета оновлено', 'success');
+    toast(i18n.t('toast.ticket_status_updated'), 'success');
     loadAdminTicketDetails(ticketId);
     loadAdminTickets();
   } catch (e) {
@@ -2641,6 +2644,34 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'btn.view': 'Перегляд',
+      'btn.reply': 'Відповісти',
+      'btn.close_ticket': 'Закрити запит',
+      'btn.send_reply': 'Надіслати відповідь',
+      'btn.send_reply_to_client': 'Надіслати відповідь клієнту',
+      'status.open': 'Новий',
+      'status.pending': 'Очікує відповіді',
+      'status.replied_short': 'Відповідь надано',
+      'status.closed_short': 'Закритий',
+      'ticket.role_you': 'Ви',
+      'ticket.client_role': 'Клієнт',
+      'ticket.admin_role': 'Адміністратор',
+      'ticket.quick_reply': 'Швидка відповідь',
+      'ticket.admin_reply_label': 'Відповідь адміністратора',
+      'ticket.ai_reply': 'Авто-відповідь ШІ',
+      'ticket.generating': 'Генерування...',
+      'ticket.closed_notice': 'Цей запит закритий і знаходиться в архіві.',
+      'ticket.ticket_num': 'Тікет',
+      'placeholder.reply_here': 'Напишіть вашу відповідь тут...',
+      'placeholder.admin_reply': 'Напишіть офіційну відповідь від підтримки...',
+      'state.loading_details': 'Завантаження деталей...',
+      'toast.reply_sent': 'Відповідь надіслано',
+      'toast.reply_sent_to_client': 'Відповідь успішно надіслано клієнту',
+      'toast.ticket_closed': 'Запит закритий',
+      'toast.ticket_status_updated': 'Статус тікета оновлено',
+      'toast.ai_generated': 'Відповідь згенерована ШІ',
+      'confirm.close_ticket': 'Ви дійсно бажаєте закрити цей запит?',
+      'error.ticket_load': 'Не вдалося завантажити деталі тікета',
       'page.invoices_desc': 'Перегляд та оплата виставлених рахунків.',
       'settings.profile_title': 'Профіль користувача',
       'settings.lang_label': 'Мова інтерфейсу / Language',
@@ -2785,6 +2816,34 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'btn.view': 'View',
+      'btn.reply': 'Reply',
+      'btn.close_ticket': 'Close Ticket',
+      'btn.send_reply': 'Send Reply',
+      'btn.send_reply_to_client': 'Send Reply to Client',
+      'status.open': 'New',
+      'status.pending': 'Awaiting Reply',
+      'status.replied_short': 'Replied',
+      'status.closed_short': 'Closed',
+      'ticket.role_you': 'You',
+      'ticket.client_role': 'Client',
+      'ticket.admin_role': 'Administrator',
+      'ticket.quick_reply': 'Quick Reply',
+      'ticket.admin_reply_label': 'Admin Reply',
+      'ticket.ai_reply': 'AI Auto-Reply',
+      'ticket.generating': 'Generating...',
+      'ticket.closed_notice': 'This ticket is closed and archived.',
+      'ticket.ticket_num': 'Ticket',
+      'placeholder.reply_here': 'Write your reply here...',
+      'placeholder.admin_reply': 'Write an official support reply...',
+      'state.loading_details': 'Loading details...',
+      'toast.reply_sent': 'Reply sent',
+      'toast.reply_sent_to_client': 'Reply successfully sent to client',
+      'toast.ticket_closed': 'Ticket closed',
+      'toast.ticket_status_updated': 'Ticket status updated',
+      'toast.ai_generated': 'AI reply generated',
+      'confirm.close_ticket': 'Are you sure you want to close this ticket?',
+      'error.ticket_load': 'Failed to load ticket details',
       'page.invoices_desc': 'View and pay your issued invoices.',
       'settings.profile_title': 'User Profile',
       'settings.lang_label': 'Interface Language',
