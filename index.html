@@ -1560,10 +1560,10 @@ async function doLogin() {
     }
     else loadBilling();
   } catch (e) {
-    showErr(err, e.message || 'Невірний email або пароль');
+    showErr(err, e.message || i18n.t('login.err_invalid'));
   } finally {
     btn.disabled = false;
-    document.getElementById('login-btn-text').textContent = '<span data-i18n="login.btn">Увійти</span>';
+    document.getElementById('login-btn-text').innerHTML = `<span data-i18n="login.btn">${i18n.t('login.btn')}</span>`;
   }
 }
 
@@ -1580,14 +1580,14 @@ function doLogout() {
 // ═══════════════════════════════════════════
 async function loadBilling() {
   const el = document.getElementById('billing-content');
-  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading')}</div>`;
   try {
     const data = await apiFetch('/billing');
     let html = '';
     if (data.paddle_error) {
       html += `<div class="whm-block error" style="margin-bottom:16px">
         <span class="whm-icon">⚠️</span>
-        <div><strong>Paddle API помилка</strong><span>${escHtml(data.paddle_error)}</span></div>
+        <div><strong>${i18n.t('error.paddle_api')}</strong><span>${escHtml(data.paddle_error)}</span></div>
       </div>`;
     }
     html += renderSubs(data.subscriptions, false);
@@ -1613,7 +1613,7 @@ async function adminLookup() {
     if (data.paddle_error) {
       html += `<div class="whm-block error" style="margin-bottom:16px">
         <span class="whm-icon">⚠️</span>
-        <div><strong>Paddle API помилка</strong><span>${escHtml(data.paddle_error)}</span></div>
+        <div><strong>${i18n.t('error.paddle_api')}</strong><span>${escHtml(data.paddle_error)}</span></div>
       </div>`;
     }
     html += renderSubs(data.subscriptions, true);
@@ -1695,7 +1695,7 @@ function renderSubCard(s, isAdmin) {
 // ═══════════════════════════════════════════
 async function loadAdminClients() {
   const el = document.getElementById('clients-content');
-  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading')}</div>`;
   try {
     const data = await apiFetch('/admin/clients');
     el.innerHTML = renderClientsTable(data.clients);
@@ -1806,7 +1806,7 @@ function switchLogTab(tab) {
 async function loadLogs() {
   const el    = document.getElementById('logs-content');
   const level = document.getElementById('log-level-filter')?.value || '';
-  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading')}</div>`;
 
   try {
     if (currentLogTab === 'webhooks') {
@@ -2132,7 +2132,7 @@ async function loadTickets() {
   const el = document.getElementById('tickets-list-container');
   const detailsEl = document.getElementById('ticket-detail-container');
   detailsEl.style.display = 'none';
-  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading')}</div>`;
   try {
     const data = await apiFetch('/tickets');
     el.innerHTML = renderTicketsTableClient(data.tickets);
@@ -2322,7 +2322,7 @@ async function loadAdminTickets() {
   const el = document.getElementById('admin-tickets-list-container');
   const detailsEl = document.getElementById('admin-ticket-detail-container');
   detailsEl.style.display = 'none';
-  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading')}</div>`;
 
   try {
     const data = await apiFetch('/admin/tickets');
@@ -2644,6 +2644,8 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'state.loading_payment': 'Завантаження методів оплати...',
+      'error.paddle_api': 'Paddle API помилка',
       'page.settings_title': 'Налаштування профілю',
       'state.loading': 'Завантаження...',
       'whm.error': 'WHM помилка',
@@ -2833,6 +2835,8 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'state.loading_payment': 'Loading payment methods...',
+      'error.paddle_api': 'Paddle API Error',
       'page.settings_title': 'Profile Settings',
       'state.loading': 'Loading...',
       'whm.error': 'WHM Error',
@@ -3327,7 +3331,7 @@ let currentSimulatedInvoice = null;
 async function openPayInvoiceModal(id, amount, currency, status, created_at, due_date) {
   const container = document.getElementById('pi-methods-container');
   if (container) {
-    container.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження методів оплати…</div>';
+    container.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading_payment')}</div>`;
   }
   
   const idEl = document.getElementById('pi-id');
