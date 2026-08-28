@@ -920,7 +920,7 @@
         <button class="btn btn-ghost btn-sm" onclick="loadBilling()"><span data-i18n="btn.refresh">↻ Оновити</span></button>
       </div>
       <div id="billing-content">
-        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+        <div class="loading-state"><div class="spinner"></div> <span data-i18n="state.loading">Завантаження…</span></div>
       </div>
     </div>
 
@@ -957,7 +957,7 @@
       </div>
 
       <div id="clients-content">
-        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+        <div class="loading-state"><div class="spinner"></div> <span data-i18n="state.loading">Завантаження…</span></div>
       </div>
     </div>
 
@@ -992,7 +992,7 @@
       </div>
 
       <div id="logs-content">
-        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+        <div class="loading-state"><div class="spinner"></div> <span data-i18n="state.loading">Завантаження…</span></div>
       </div>
     </div>
 
@@ -1003,13 +1003,13 @@
           <div class="page-title" data-i18n="page.support_title">Служба підтримки</div>
           <div class="page-desc"><span data-i18n="page.support_desc">Створення запитів та переписка з адміністратором</span></div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openCreateTicketModal()">
+        <button class="btn btn-primary btn-sm" onclick="openCreateTicketModal()" data-i18n="btn.create_ticket">
           + Створити тікет
         </button>
       </div>
 
       <div id="tickets-list-container">
-        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+        <div class="loading-state"><div class="spinner"></div> <span data-i18n="state.loading">Завантаження…</span></div>
       </div>
 
       <!-- Ticket Details -->
@@ -1036,7 +1036,7 @@
       </div>
 
       <div id="admin-tickets-list-container">
-        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+        <div class="loading-state"><div class="spinner"></div> <span data-i18n="state.loading">Завантаження…</span></div>
       </div>
 
       <!-- Admin Ticket Details -->
@@ -1238,7 +1238,7 @@
 <div class="view" id="view-settings">
   <div class="page-header">
     <div>
-      <div class="page-title"><span data-i18n="nav.settings">Налаштування</span> профілю</div>
+      <div class="page-title" data-i18n="page.settings_title">Налаштування профілю</div>
       <div class="page-desc"><span data-i18n="page.settings_desc">Змініть ваше ім'я та пароль</span></div>
     </div>
   </div>
@@ -1961,15 +1961,15 @@ function renderWhmBlock(whm) {
   if (whm.error) return `
     <div class="whm-block error" style="margin-top:20px">
       <span class="whm-icon">⚠️</span>
-      <div><strong>WHM помилка</strong><span>${escHtml(whm.error)}</span></div>
+      <div><strong>${i18n.t('whm.error')}</strong><span>${escHtml(whm.error)}</span></div>
     </div>`;
 
   if (whm.created) return `
     <div class="whm-block created" style="margin-top:20px">
       <span class="whm-icon">✅</span>
       <div>
-        <strong>Хостинг акаунт створено</strong>
-        <span>Домен: ${escHtml(whm.domain || '')} · Логін: ${escHtml(whm.username || '')}</span>
+        <strong>${i18n.t('whm.account_created')}</strong>
+        <span>${i18n.t('whm.domain')}: ${escHtml(whm.domain || '')} · ${i18n.t('whm.login')}: ${escHtml(whm.username || '')}</span>
       </div>
     </div>`;
 
@@ -1979,8 +1979,8 @@ function renderWhmBlock(whm) {
     <div class="whm-block existed" style="margin-top:20px">
       <span class="whm-icon">🖥️</span>
       <div>
-        <strong>Хостинг акаунт активний</strong>
-        <span>${escHtml(acc.domain || acc.login || 'cPanel акаунт знайдено')}</span>
+        <strong>${i18n.t('whm.account_active')}</strong>
+        <span>${escHtml(acc.domain || acc.login || i18n.t('whm.cpanel_found'))}</span>
       </div>
     </div>`;
   }
@@ -1991,7 +1991,7 @@ function renderWhmAdminBlock(account, email) {
   const planPickerHtml = `
     <div style="margin-top:10px">
       <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-        color:var(--muted);margin-bottom:8px">Пакет хостингу</div>
+        color:var(--muted);margin-bottom:8px">${i18n.t('whm.hosting_plan')}</div>
       <div class="plan-picker" id="lookup-plan-picker"></div>
     </div>`;
 
@@ -2002,13 +2002,13 @@ function renderWhmAdminBlock(account, email) {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)">
           <span style="font-size:18px">🖥️</span>
-          <span>WHM акаунт <b style="color:var(--text)">не знайдено</b> для цього email</span>
+          <span>${i18n.t('whm.not_found_for')}</span>
         </div>
       </div>
       ${planPickerHtml}
       <div style="margin-top:14px">
         <button class="btn btn-primary btn-sm" style="width:auto"
-          onclick="provisionWhm('${escHtml(email)}')">+ Створити в WHM</button>
+          onclick="provisionWhm('${escHtml(email)}')">+ ${i18n.t('whm.create_in_whm')}</button>
       </div>
     </div>`;
   }
@@ -2016,7 +2016,7 @@ function renderWhmAdminBlock(account, email) {
   if (account && account.error) return `
     <div class="whm-block error" style="margin-top:20px">
       <span class="whm-icon">⚠️</span>
-      <div><strong>WHM помилка</strong><span>${escHtml(account.error)}</span></div>
+      <div><strong>${i18n.t('whm.error')}</strong><span>${escHtml(account.error)}</span></div>
     </div>`;
 
   if (account) {
@@ -2028,7 +2028,7 @@ function renderWhmAdminBlock(account, email) {
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:20px">🖥️</span>
           <div>
-            <div style="font-size:14px;font-weight:700;margin-bottom:4px">WHM акаунт активний</div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px">${i18n.t('whm.account_active')}</div>
             <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">
               ${escHtml(account.domain || '—')} · ${escHtml(account.user || account.login || '—')}
             </div>
@@ -2038,10 +2038,10 @@ function renderWhmAdminBlock(account, email) {
       </div>
       <div style="margin-top:16px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-          color:var(--muted);margin-bottom:8px">Змінити пакет</div>
+          color:var(--muted);margin-bottom:8px">${i18n.t('whm.change_plan')}</div>
         <div class="plan-picker" id="lookup-plan-picker"></div>
         <button class="btn btn-ghost btn-sm" style="margin-top:10px"
-          onclick="provisionWhm('${escHtml(email)}')">Застосувати пакет</button>
+          onclick="provisionWhm('${escHtml(email)}')">${i18n.t('whm.apply_plan')}</button>
       </div>
     </div>`;
   }
@@ -2054,11 +2054,11 @@ async function provisionWhm(email) {
     const res = await apiFetch('/admin/billing/provision', 'POST', { email, plan });
     const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
     if (res.created) {
-      toast(`WHM акаунт створено: ${res.username} · пакет: ${planLabel}`, 'success');
+      toast(`${i18n.t('whm.account_created_toast')}: ${res.username} · ${i18n.t('whm.plan')}: ${planLabel}`, 'success');
     } else if (res.existed) {
-      toast('Акаунт вже існує в WHM', 'success');
+      toast(i18n.t('whm.account_exists'), 'success');
     } else {
-      toast(res.error || 'Помилка', 'error');
+      toast(res.error || i18n.t('error.generic'), 'error');
     }
     adminLookup();
   } catch (e) {
@@ -2644,6 +2644,23 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'page.settings_title': 'Налаштування профілю',
+      'state.loading': 'Завантаження...',
+      'whm.error': 'WHM помилка',
+      'whm.account_created': 'Хостинг акаунт створено',
+      'whm.account_active': 'Хостинг акаунт активний',
+      'whm.account_exists': 'Акаунт вже існує в WHM',
+      'whm.not_found_for': 'WHM акаунт не знайдено для цього email',
+      'whm.create_in_whm': 'Створити в WHM',
+      'whm.hosting_plan': 'Пакет хостингу',
+      'whm.change_plan': 'Змінити пакет',
+      'whm.apply_plan': 'Застосувати пакет',
+      'whm.domain': 'Домен',
+      'whm.login': 'Логін',
+      'whm.cpanel_found': 'cPanel акаунт знайдено',
+      'whm.account_created_toast': 'WHM акаунт створено',
+      'whm.plan': 'пакет',
+      'error.generic': 'Помилка',
       'btn.view': 'Перегляд',
       'btn.reply': 'Відповісти',
       'btn.close_ticket': 'Закрити запит',
@@ -2816,6 +2833,23 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'page.settings_title': 'Profile Settings',
+      'state.loading': 'Loading...',
+      'whm.error': 'WHM Error',
+      'whm.account_created': 'Hosting account created',
+      'whm.account_active': 'Hosting account active',
+      'whm.account_exists': 'Account already exists in WHM',
+      'whm.not_found_for': 'WHM account not found for this email',
+      'whm.create_in_whm': 'Create in WHM',
+      'whm.hosting_plan': 'Hosting Plan',
+      'whm.change_plan': 'Change Plan',
+      'whm.apply_plan': 'Apply Plan',
+      'whm.domain': 'Domain',
+      'whm.login': 'Login',
+      'whm.cpanel_found': 'cPanel account found',
+      'whm.account_created_toast': 'WHM account created',
+      'whm.plan': 'plan',
+      'error.generic': 'Error',
       'btn.view': 'View',
       'btn.reply': 'Reply',
       'btn.close_ticket': 'Close Ticket',
