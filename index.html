@@ -1726,7 +1726,7 @@ function renderClientsTable(clients) {
   return `<div class="table-wrapper">
     <table>
       <thead><tr>
-        <th>Email</th><th>Ім'я</th><th>Роль</th><th>Дата реєстрації</th><th></th>
+        <th>Email</th><th data-i18n="table.name">Ім'я</th><th data-i18n="table.role">Роль</th><th data-i18n="table.reg_date">Дата реєстрації</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -1846,7 +1846,7 @@ function renderEventLogs(logs) {
   return `<div class="table-wrapper" style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th>Час</th><th>Рівень</th><th>Подія</th><th>Email</th><th>Повідомлення</th><th>Контекст</th>
+        <th data-i18n="table.time">Час</th><th data-i18n="table.level">Рівень</th><th data-i18n="table.event">Подія</th><th>Email</th><th data-i18n="table.message">Повідомлення</th><th data-i18n="table.context">Контекст</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -1870,7 +1870,7 @@ function renderWebhookLogs(logs) {
   return `<div class="table-wrapper" style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th>Час</th><th>Подія</th><th>Email</th><th data-i18n="table.status">Статус</th><th>Помилка</th><th>Paddle ID</th>
+        <th data-i18n="table.time">Час</th><th data-i18n="table.event">Подія</th><th>Email</th><th data-i18n="table.status">Статус</th><th data-i18n="table.error">Помилка</th><th>Paddle ID</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -2176,7 +2176,7 @@ function renderTicketsTableClient(tickets) {
       <table>
         <thead>
           <tr>
-            <th>Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th>Оновлено</th><th></th>
+            <th data-i18n="table.subject">Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th data-i18n="table.updated">Оновлено</th><th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -2375,7 +2375,7 @@ function renderTicketsTableAdmin(tickets) {
       <table>
         <thead>
           <tr>
-            <th data-i18n="table.client">Клієнт</th><th>Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th>Оновлено</th><th></th>
+            <th data-i18n="table.client">Клієнт</th><th data-i18n="table.subject">Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th data-i18n="table.updated">Оновлено</th><th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -2641,6 +2641,22 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'filter.unpaid_invoices': 'неоплачених',
+      'filter.paid_invoices': 'оплачених',
+      'filter.cancelled_invoices': 'відмінених',
+      'filter.refunded_invoices': 'повернених',
+      'filter.all_invoices': 'рахунків',
+      'table.name': 'Ім\'я',
+      'table.role': 'Роль',
+      'table.reg_date': 'Дата реєстрації',
+      'table.time': 'Час',
+      'table.level': 'Рівень',
+      'table.event': 'Подія',
+      'table.message': 'Повідомлення',
+      'table.context': 'Контекст',
+      'table.error': 'Помилка',
+      'table.subject': 'Тема',
+      'table.updated': 'Оновлено',
       'sub.status.active': 'Активна',
       'sub.status.trialing': 'Тріал',
       'sub.status.past_due': 'Прострочена',
@@ -2760,6 +2776,22 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'filter.unpaid_invoices': 'unpaid invoices',
+      'filter.paid_invoices': 'paid invoices',
+      'filter.cancelled_invoices': 'cancelled invoices',
+      'filter.refunded_invoices': 'refunded invoices',
+      'filter.all_invoices': 'invoices',
+      'table.name': 'Name',
+      'table.role': 'Role',
+      'table.reg_date': 'Registration Date',
+      'table.time': 'Time',
+      'table.level': 'Level',
+      'table.event': 'Event',
+      'table.message': 'Message',
+      'table.context': 'Context',
+      'table.error': 'Error',
+      'table.subject': 'Subject',
+      'table.updated': 'Updated',
       'sub.status.active': 'Active',
       'sub.status.trialing': 'Trialing',
       'sub.status.past_due': 'Past Due',
@@ -3065,7 +3097,13 @@ function filterInvoices(status) {
   const filtered = status === 'all' ? _allInvoices : _allInvoices.filter(i => i.status === status);
 
   if (!filtered.length) {
-    const labels = { unpaid:'неоплачених', paid:'оплачених', cancelled:'відмінених', refunded:'повернених', all:'рахунків' };
+    const labels = { 
+      unpaid: i18n.t('filter.unpaid_invoices') || 'неоплачених', 
+      paid: i18n.t('filter.paid_invoices') || 'оплачених', 
+      cancelled: i18n.t('filter.cancelled_invoices') || 'відмінених', 
+      refunded: i18n.t('filter.refunded_invoices') || 'повернених', 
+      all: i18n.t('filter.all_invoices') || 'рахунків' 
+    };
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає ${labels[status] || status}</td></tr>`;
     return;
   }
