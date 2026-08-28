@@ -2570,6 +2570,13 @@ async function loadSettings() {
           <input type="text" id="settings-name" placeholder="Ім'я">
         </div>
         <div class="field">
+          <label>Мова інтерфейсу / Language</label>
+          <select id="settings-lang">
+            <option value="uk">Українська</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="field">
           <label>Новий пароль (залиште порожнім, щоб не змінювати)</label>
           <input type="password" id="settings-password" placeholder="мінімум 6 символів">
         </div>
@@ -2582,6 +2589,7 @@ async function loadSettings() {
   try {
     const me = await apiFetch('/auth/me');
     document.getElementById('settings-name').value = me.name || me.email.split('@')[0];
+    document.getElementById('settings-lang').value = i18n.locale;
     
     if (userRole === 'admin') {
       const data = await apiFetch('/admin/settings');
@@ -2599,9 +2607,17 @@ async function loadSettings() {
 async function saveSettings() {
   const name = document.getElementById('settings-name').value.trim();
   const password = document.getElementById('settings-password').value;
+  const lang = document.getElementById('settings-lang').value;
   const err = document.getElementById('settings-error');
   err.classList.remove('show');
-  if (!name && !password) { showErr(err, 'Заповніть хоча б одне поле'); return; }
+  
+  if (lang !== i18n.locale) {
+    localStorage.setItem('app_lang', lang);
+    i18n.locale = lang;
+    i18n.apply();
+  }
+
+  if (!name && !password && lang === i18n.locale) { showErr(err, 'Заповніть хоча б одне поле'); return; }
   
   try {
     await apiFetch('/auth/profile', 'PUT', { name, password });
@@ -2629,7 +2645,7 @@ async function savePaymentSettings() {
 //  Щоб додати нову мову — додай інший блок в i18n.locales
 // ═══════════════════════════════════════════
 const i18n = {
-  locale: 'uk',
+  locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
       'status.all': 'Усі',
@@ -2649,6 +2665,22 @@ const i18n = {
       'txn.ready':     'Незавершена',
       'txn.canceled':  'Скасована',
     },
+    en: {
+      'status.all': 'All',
+      'inv.paid': 'Paid',
+      'inv.completed': 'Completed',
+      'inv.billed': 'Unpaid invoice',
+      'inv.past_due': 'Past due',
+      'inv.draft': 'Draft',
+      'inv.canceled': 'Canceled',
+      'txn.completed': 'Completed',
+      'txn.paid': 'Paid',
+      'txn.billed': 'Billed',
+      'txn.past_due': 'Past Due',
+      'txn.draft': 'Draft',
+      'txn.ready': 'Incomplete',
+      'txn.canceled': 'Canceled',
+    }
   },
   t(key) {
     return (this.locales[this.locale] || {})[key] || key;
