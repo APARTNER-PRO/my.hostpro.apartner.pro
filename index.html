@@ -818,20 +818,20 @@
 <div id="page-login" class="page active">
   <div class="login-card">
     <div class="login-logo"><span>●</span> BILLING PORTAL</div>
-    <div class="login-title">Вхід в систему</div>
-    <div class="login-sub">Введіть дані для доступу до кабінету</div>
+    <div class="login-title"><span data-i18n="login.title">Вхід в систему</span></div>
+    <div class="login-sub"><span data-i18n="login.subtitle">Введіть дані для доступу до кабінету</span></div>
 
     <div class="field">
       <label>Email</label>
       <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
     </div>
     <div class="field">
-      <label>Пароль</label>
+      <label data-i18n="login.password">Пароль</label>
       <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
     </div>
 
     <button class="btn btn-primary" id="login-btn" onclick="doLogin()">
-      <span id="login-btn-text">Увійти</span>
+      <span id="login-btn-text"><span data-i18n="login.btn">Увійти</span></span>
     </button>
 
     <div class="error-msg" id="login-error"></div>
@@ -860,41 +860,41 @@
     <!-- Client nav -->
     <div id="nav-client">
       <div class="nav-item active" onclick="showView('billing')">
-        <span class="nav-icon">💳</span> Моя підписка
+        <span class="nav-icon">💳</span> <span data-i18n="nav.billing">Моя підписка</span>
       </div>
       <div class="nav-item" onclick="showView('tickets'); loadTickets()">
-        <span class="nav-icon">🎫</span> Підтримка
+        <span class="nav-icon">🎫</span> <span data-i18n="nav.support">Підтримка</span>
       </div>
       <div class="nav-item" onclick="showView('invoices'); loadInvoices()">
-        <span class="nav-icon">🧾</span> Мої рахунки
+        <span class="nav-icon">🧾</span> <span data-i18n="nav.invoices">Мої рахунки</span>
       </div>
       <div class="nav-item" onclick="showView('transactions'); loadTransactions()">
-        <span class="nav-icon">💸</span> Транзакції
+        <span class="nav-icon">💸</span> <span data-i18n="nav.transactions">Транзакції</span>
       </div>
       <div class="nav-item" onclick="showView('settings'); loadSettings()">
-        <span class="nav-icon">⚙️</span> Налаштування
+        <span class="nav-icon">⚙️</span> <span data-i18n="nav.settings">Налаштування</span>
       </div>
     </div>
 
     <!-- Admin nav -->
     <div id="nav-admin" style="display:none">
       <div class="nav-item active" onclick="showView('admin-billing')">
-        <span class="nav-icon">🔍</span> Перевірка білінгу
+        <span class="nav-icon">🔍</span> <span data-i18n="nav.admin_billing">Перевірка білінгу</span>
       </div>
       <div class="nav-item" onclick="showView('admin-clients')">
-        <span class="nav-icon">👥</span> Клієнти
+        <span class="nav-icon">👥</span> <span data-i18n="nav.admin_clients">Клієнти</span>
       </div>
       <div class="nav-item" onclick="showView('admin-tickets'); loadAdminTickets()">
-        <span class="nav-icon">🎫</span> Тікети підтримки
+        <span class="nav-icon">🎫</span> <span data-i18n="nav.admin_tickets">Тікети підтримки</span>
       </div>
       <div class="nav-item" onclick="showView('admin-invoices'); loadAdminInvoices()">
-        <span class="nav-icon">🧾</span> Управління рахунками
+        <span class="nav-icon">🧾</span> <span data-i18n="nav.admin_invoices">Управління рахунками</span>
       </div>
       <div class="nav-item" onclick="showView('admin-logs'); loadLogs()">
-        <span class="nav-icon">📋</span> Логи
+        <span class="nav-icon">📋</span> <span data-i18n="nav.admin_logs">Логи</span>
       </div>
       <div class="nav-item" onclick="showView('settings'); loadSettings()">
-        <span class="nav-icon">⚙️</span> Налаштування
+        <span class="nav-icon">⚙️</span> <span data-i18n="nav.settings">Налаштування</span>
       </div>
     </div>
 
@@ -903,7 +903,7 @@
         <div class="user-avatar" id="user-avatar-letter">?</div>
         <div class="user-email" id="sidebar-email">—</div>
       </div>
-      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="doLogout()">Вийти</button>
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="doLogout()" data-i18n="nav.logout">Вийти</button>
     </div>
   </aside>
 
@@ -914,10 +914,10 @@
     <div class="view active" id="view-billing">
       <div class="page-header">
         <div>
-          <div class="page-title">Моя підписка</div>
-          <div class="page-desc">Активні тарифи та терміни дії</div>
+          <div class="page-title"><span data-i18n="nav.billing">Моя підписка</span></div>
+          <div class="page-desc"><span data-i18n="page.billing_desc">Активні тарифи та терміни дії</span></div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="loadBilling()">↻ Оновити</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadBilling()"><span data-i18n="btn.refresh">↻ Оновити</span></button>
       </div>
       <div id="billing-content">
         <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
@@ -928,17 +928,17 @@
     <div class="view" id="view-admin-billing">
       <div class="page-header">
         <div>
-          <div class="page-title">Перевірка білінгу</div>
-          <div class="page-desc">Подивитись підписки будь-якого клієнта</div>
+          <div class="page-title"><span data-i18n="nav.admin_billing">Перевірка білінгу</span></div>
+          <div class="page-desc"><span data-i18n="page.admin_billing_desc">Подивитись підписки будь-якого клієнта</span></div>
         </div>
       </div>
 
       <div style="display:flex;gap:12px;margin-bottom:28px;align-items:flex-end">
         <div class="field" style="flex:1;margin:0">
-          <label>Email клієнта</label>
+          <label data-i18n="label.client_email">Email клієнта</label>
           <input type="email" id="admin-lookup-email" placeholder="client@example.com">
         </div>
-        <button class="btn btn-primary btn-sm" style="width:auto;height:44px" onclick="adminLookup()">Знайти</button>
+        <button class="btn btn-primary btn-sm" style="width:auto;height:44px" onclick="adminLookup()" data-i18n="btn.find">Знайти</button>
       </div>
 
       <div id="admin-billing-content"></div>
@@ -948,11 +948,11 @@
     <div class="view" id="view-admin-clients">
       <div class="page-header">
         <div>
-          <div class="page-title">Клієнти</div>
-          <div class="page-desc">Управління акаунтами клієнтів</div>
+          <div class="page-title"><span data-i18n="nav.admin_clients">Клієнти</span></div>
+          <div class="page-desc"><span data-i18n="page.admin_clients_desc">Управління акаунтами клієнтів</span></div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
-          + Новий клієнт
+          + <span data-i18n="modal.new_client">Новий клієнт</span>
         </button>
       </div>
 
@@ -965,13 +965,13 @@
     <div class="view" id="view-admin-logs">
       <div class="page-header">
         <div>
-          <div class="page-title">Журнал подій</div>
-          <div class="page-desc">Логи авторизацій, WHM, Paddle, вебхуків</div>
+          <div class="page-title"><span data-i18n="page.logs_title">Журнал подій</span></div>
+          <div class="page-desc"><span data-i18n="nav.admin_logs">Логи</span> авторизацій, WHM, Paddle, вебхуків</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <select id="log-level-filter" class="field" style="margin:0;width:auto"
             onchange="loadLogs()">
-            <option value="">Всі рівні</option>
+            <option value="" data-i18n="filter.all_levels">Всі рівні</option>
             <option value="info">Info</option>
             <option value="warning">Warning</option>
             <option value="error">Error</option>
@@ -1000,8 +1000,8 @@
     <div class="view" id="view-tickets">
       <div class="page-header">
         <div>
-          <div class="page-title">Служба підтримки</div>
-          <div class="page-desc">Створення запитів та переписка з адміністратором</div>
+          <div class="page-title" data-i18n="page.support_title">Служба підтримки</div>
+          <div class="page-desc"><span data-i18n="page.support_desc">Створення запитів та переписка з адміністратором</span></div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openCreateTicketModal()">
           + Створити тікет
@@ -1020,16 +1020,16 @@
     <div class="view" id="view-admin-tickets">
       <div class="page-header">
         <div>
-          <div class="page-title">Тікети підтримки</div>
-          <div class="page-desc">Усі запити від клієнтів</div>
+          <div class="page-title"><span data-i18n="nav.admin_tickets">Тікети підтримки</span></div>
+          <div class="page-desc" data-i18n="page.admin_tickets_desc">Усі запити від клієнтів</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <select id="admin-ticket-status-filter" class="field" style="margin:0;width:auto" onchange="loadAdminTickets()">
-            <option value="">Всі статуси</option>
-            <option value="open">Open (Новий)</option>
-            <option value="pending">Pending (Клієнт відповів)</option>
-            <option value="replied">Replied (Відповідь надано)</option>
-            <option value="closed">Closed (Закритий)</option>
+            <option value="" data-i18n="filter.all_statuses">Всі статуси</option>
+            <option value="open" data-i18n="status.open_new">Open (Новий)</option>
+            <option value="pending" data-i18n="status.pending_client">Pending (Клієнт відповів)</option>
+            <option value="replied" data-i18n="status.replied">Replied (Відповідь надано)</option>
+            <option value="closed" data-i18n="status.closed">Closed (Закритий)</option>
           </select>
           <button class="btn btn-ghost btn-sm" onclick="loadAdminTickets()">↻</button>
         </div>
@@ -1050,7 +1050,7 @@
 <div class="view" id="view-invoices">
   <div class="page-header">
     <div>
-      <h2 class="page-title">Мої рахунки</h2>
+      <h2 class="page-title"><span data-i18n="nav.invoices">Мої рахунки</span></h2>
       <p class="page-sub">Перегляд та оплата виставлених рахунків.</p>
     </div>
   </div>
@@ -1059,7 +1059,7 @@
 
     <!-- Sidebar: status filters -->
     <div id="inv-sidebar" style="width:200px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
-      <div onclick="this.parentNode.classList.toggle('expanded')" style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
+      <div onclick="this.parentNode.classList.toggle('expanded')" style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);" data-i18n="filter.title">Фільтр</div>
 
       <div id="inv-filter-all" onclick="filterInvoices('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--accent);" data-i18n="status.all"></span>
@@ -1106,11 +1106,11 @@
           <table class="table" id="invoices-table">
             <thead>
               <tr>
-                <th>Рахунок #</th>
-                <th>Дата</th>
-                <th>Термін</th>
-                <th>Сума</th>
-                <th>Статус</th>
+                <th data-i18n="table.invoice_num">Рахунок #</th>
+                <th data-i18n="table.date">Дата</th>
+                <th data-i18n="table.due">Термін</th>
+                <th data-i18n="table.amount">Сума</th>
+                <th data-i18n="table.status">Статус</th>
               </tr>
             </thead>
             <tbody>
@@ -1128,8 +1128,8 @@
 <div class="view" id="view-transactions">
   <div class="page-header">
     <div>
-      <h2 class="page-title">Транзакції (Paddle)</h2>
-      <p class="page-sub">Історія ваших платежів.</p>
+      <h2 class="page-title"><span data-i18n="nav.transactions">Транзакції</span> (Paddle)</h2>
+      <p class="page-sub"><span data-i18n="page.txn_desc">Історія ваших платежів.</span></p>
     </div>
   </div>
 
@@ -1137,7 +1137,7 @@
 
     <!-- Sidebar: status filters -->
     <div id="txn-sidebar" style="width:200px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
-      <div onclick="this.parentNode.classList.toggle('expanded')" style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
+      <div onclick="this.parentNode.classList.toggle('expanded')" style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);" data-i18n="filter.title">Фільтр</div>
 
       <div id="txn-filter-all" onclick="filterTransactions('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--accent);" data-i18n="status.all"></span>
@@ -1187,11 +1187,11 @@
           <table class="table" id="transactions-table">
             <thead>
               <tr>
-                <th>Транзакція #</th>
-                <th>Створено</th>
-                <th>Списано</th>
-                <th>Сума</th>
-                <th>Статус</th>
+                <th data-i18n="table.txn_num">Транзакція #</th>
+                <th data-i18n="table.created">Створено</th>
+                <th data-i18n="table.charged">Списано</th>
+                <th data-i18n="table.amount">Сума</th>
+                <th data-i18n="table.status">Статус</th>
               </tr>
             </thead>
             <tbody>
@@ -1209,22 +1209,22 @@
 <div class="view" id="view-admin-invoices">
   <div class="page-header">
     <div>
-      <h2 class="page-title">Всі рахунки (Адмін)</h2>
-      <p class="page-sub">Керування виставленими рахунками клієнтів.</p>
+      <h2 class="page-title"><span data-i18n="page.admin_invoices_title">Всі рахунки (Адмін)</span></h2>
+      <p class="page-sub"><span data-i18n="page.admin_invoices_desc">Керування виставленими рахунками клієнтів.</span></p>
     </div>
-    <button class="btn btn-primary" onclick="openCreateInvoiceModal()">+ Створити рахунок</button>
+    <button class="btn btn-primary" onclick="openCreateInvoiceModal()" data-i18n="btn.create_invoice">+ Створити рахунок</button>
   </div>
   <div class="panel">
     <div class="table-container">
       <table class="table" id="admin-invoices-table">
         <thead>
           <tr>
-            <th>Рахунок #</th>
-            <th>Клієнт</th>
-            <th>Створено</th>
-            <th>Термін</th>
-            <th>Сума</th>
-            <th>Статус</th>
+            <th data-i18n="table.invoice_num">Рахунок #</th>
+            <th data-i18n="table.client">Клієнт</th>
+            <th data-i18n="table.created">Створено</th>
+            <th data-i18n="table.due">Термін</th>
+            <th data-i18n="table.amount">Сума</th>
+            <th data-i18n="table.status">Статус</th>
           </tr>
         </thead>
         <tbody>
@@ -1238,8 +1238,8 @@
 <div class="view" id="view-settings">
   <div class="page-header">
     <div>
-      <div class="page-title">Налаштування профілю</div>
-      <div class="page-desc">Змініть ваше ім'я та пароль</div>
+      <div class="page-title"><span data-i18n="nav.settings">Налаштування</span> профілю</div>
+      <div class="page-desc"><span data-i18n="page.settings_desc">Змініть ваше ім'я та пароль</span></div>
     </div>
   </div>
 
@@ -1257,22 +1257,22 @@
 <div class="modal-backdrop" id="modal-create-ticket">
   <div class="modal" style="max-width: 500px;">
     <button class="modal-close" onclick="closeCreateTicketModal()">✕</button>
-    <div class="modal-title">Новий запит підтримки</div>
+    <div class="modal-title"><span data-i18n="modal.new_ticket">Новий запит підтримки</span></div>
 
     <div class="field">
-      <label>Тема запиту</label>
-      <input type="text" id="ticket-subject" placeholder="Коротко опишіть тему">
+      <label data-i18n="label.ticket_subject">Тема запиту</label>
+      <input type="text" id="ticket-subject" placeholder="Коротко опишіть тему" data-i18n-placeholder="placeholder.ticket_subject">
     </div>
     <div class="field">
-      <label>Повідомлення</label>
-      <textarea id="ticket-message" placeholder="Детально опишіть ваше запитання або проблему..." style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
+      <label data-i18n="label.message">Повідомлення</label>
+      <textarea id="ticket-message" placeholder="Детально опишіть ваше запитання або проблему..." data-i18n-placeholder="placeholder.ticket_message" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;"></textarea>
     </div>
 
     <div class="error-msg" id="ticket-modal-error"></div>
 
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeCreateTicketModal()">Скасувати</button>
-      <button class="btn btn-primary btn-sm" style="width:auto" onclick="createTicket()">Надіслати запит</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeCreateTicketModal()" data-i18n="btn.cancel">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="createTicket()" data-i18n="btn.send_request">Надіслати запит</button>
     </div>
   </div>
 </div>
@@ -1283,22 +1283,22 @@
 <div class="modal-backdrop" id="modal-create">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-title">Новий клієнт</div>
+    <div class="modal-title"><span data-i18n="modal.new_client">Новий клієнт</span></div>
 
     <div class="field">
-      <label>Ім'я</label>
-      <input type="text" id="new-name" placeholder="Іван Іваненко">
+      <label data-i18n="label.name">Ім'я</label>
+      <input type="text" id="new-name" placeholder="Іван Іваненко" data-i18n-placeholder="placeholder.name">
     </div>
     <div class="field">
       <label>Email *</label>
       <input type="email" id="new-email" placeholder="client@example.com">
     </div>
     <div class="field">
-      <label>Пароль *</label>
-      <input type="password" id="new-password" placeholder="мін. 6 символів">
+      <label data-i18n="label.password_req">Пароль *</label>
+      <input type="password" id="new-password" placeholder="мін. 6 символів" data-i18n-placeholder="placeholder.pwd_min">
     </div>
     <div class="field">
-      <label>WHM Пакет хостингу</label>
+      <label data-i18n="label.whm_plan">WHM Пакет хостингу</label>
       <div class="plan-picker" id="modal-plan-picker">
         <!-- заповнюється через JS -->
       </div>
@@ -1307,8 +1307,8 @@
     <div class="error-msg" id="modal-error"></div>
 
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Скасувати</button>
-      <button class="btn btn-primary btn-sm" style="width:auto" onclick="createClient()">Створити акаунт</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()" data-i18n="btn.cancel">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="createClient()" data-i18n="btn.create_account">Створити акаунт</button>
     </div>
   </div>
 </div>
@@ -1317,22 +1317,22 @@
 <div class="modal-backdrop" id="modal-edit-client">
   <div class="modal">
     <button class="modal-close" onclick="closeEditModal()">✕</button>
-    <div class="modal-title">Редагувати клієнта</div>
+    <div class="modal-title"><span data-i18n="modal.edit_client">Редагувати клієнта</span></div>
 
     <div class="field">
-      <label>Ім'я</label>
-      <input type="text" id="edit-name" placeholder="Ім'я клієнта">
+      <label data-i18n="label.name">Ім'я</label>
+      <input type="text" id="edit-name" placeholder="Ім'я клієнта" data-i18n-placeholder="placeholder.client_name">
     </div>
     <div class="field">
-      <label>Пароль (залиште порожнім, щоб не змінювати)</label>
-      <input type="password" id="edit-password" placeholder=" мінімум 6 символів">
+      <label data-i18n="label.pwd_optional">Пароль (залиште порожнім, щоб не змінювати)</label>
+      <input type="password" id="edit-password" placeholder=" мінімум 6 символів" data-i18n-placeholder="placeholder.pwd_min2">
     </div>
 
     <div class="error-msg" id="edit-modal-error"></div>
 
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeEditModal()">Скасувати</button>
-      <button class="btn btn-primary btn-sm" style="width:auto" onclick="updateClient()">Зберегти зміни</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeEditModal()" data-i18n="btn.cancel">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="updateClient()" data-i18n="btn.save_changes">Зберегти зміни</button>
     </div>
   </div>
 </div>
@@ -1342,20 +1342,20 @@
 <div class="modal-backdrop" id="modal-create-invoice">
   <div class="modal" style="max-width: 500px;">
     <button class="modal-close" onclick="closeCreateInvoiceModal()">✕</button>
-    <div class="modal-title">Новий рахунок</div>
+    <div class="modal-title"><span data-i18n="modal.new_invoice">Новий рахунок</span></div>
 
     <div class="field">
-      <label>Оберіть клієнта *</label>
+      <label data-i18n="label.select_client">Оберіть клієнта *</label>
       <select id="ci-user-id" style="width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius); padding:13px 16px; color:var(--text); font-family:var(--font); font-size:14px; outline:none;"></select>
     </div>
     
     <div class="field">
-      <label>Сума *</label>
+      <label data-i18n="label.amount_req">Сума *</label>
       <input type="number" id="ci-amount" step="0.01" min="0.01" placeholder="10.00">
     </div>
 
     <div class="field">
-      <label>Валюта *</label>
+      <label data-i18n="label.currency_req">Валюта *</label>
       <select id="ci-currency" style="width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius); padding:13px 16px; color:var(--text); font-family:var(--font); font-size:14px; outline:none;">
         <option value="EUR">EUR (€)</option>
         <option value="USD">USD ($)</option>
@@ -1364,15 +1364,15 @@
     </div>
 
     <div class="field">
-      <label>Термін оплати *</label>
+      <label data-i18n="label.due_date_req">Термін оплати *</label>
       <input type="date" id="ci-due-date">
     </div>
 
     <div class="error-msg" id="ci-modal-error"></div>
 
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeCreateInvoiceModal()">Скасувати</button>
-      <button class="btn btn-primary btn-sm" style="width:auto" onclick="submitCreateInvoice()">Створити</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeCreateInvoiceModal()" data-i18n="btn.cancel">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="submitCreateInvoice()" data-i18n="btn.create">Створити</button>
     </div>
   </div>
 </div>
@@ -1381,27 +1381,27 @@
 <div class="modal-backdrop" id="modal-pay-invoice">
   <div class="modal" style="max-width: 500px;">
     <button class="modal-close" onclick="closePayInvoiceModal()">✕</button>
-    <div class="modal-title">Деталі рахунку</div>
+    <div class="modal-title"><span data-i18n="modal.invoice_details">Деталі рахунку</span></div>
     
     <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:24px;">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-        <span style="color:var(--muted)">Номер рахунку:</span>
+        <span style="color:var(--muted)"><span data-i18n="label.invoice_num">Номер рахунку:</span></span>
         <strong id="pi-id">—</strong>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-        <span style="color:var(--muted)">Сума до сплати:</span>
+        <span style="color:var(--muted)"><span data-i18n="label.amount_due">Сума до сплати:</span></span>
         <strong id="pi-amount">—</strong>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-        <span style="color:var(--muted)">Дата створення:</span>
+        <span style="color:var(--muted)"><span data-i18n="label.created_date">Дата створення:</span></span>
         <span id="pi-date">—</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-        <span style="color:var(--muted)">Термін оплати:</span>
+        <span style="color:var(--muted)"><span data-i18n="label.due_date">Термін оплати:</span></span>
         <span id="pi-due">—</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
-        <span style="color:var(--muted)">Статус:</span>
+        <span style="color:var(--muted)"><span data-i18n="label.status">Статус:</span></span>
         <span id="pi-status">—</span>
       </div>
     </div>
@@ -1411,7 +1411,7 @@
     </div>
     
     <div class="modal-footer" style="margin-top:20px;">
-      <button class="btn btn-ghost btn-sm" onclick="closePayInvoiceModal()">Закрити</button>
+      <button class="btn btn-ghost btn-sm" onclick="closePayInvoiceModal()" data-i18n="btn.close">Закрити</button>
     </div>
   </div>
 </div>
@@ -1420,16 +1420,16 @@
 <div class="modal-backdrop" id="modal-checkout-simulator" style="z-index: 110;">
   <div class="modal" style="max-width: 440px; text-align: center; border: 1px solid var(--accent);">
     <div style="font-size: 40px; margin-bottom: 16px;" id="sim-icon">💳</div>
-    <div class="modal-title" id="sim-title" style="margin-bottom: 8px;">Симуляція оплати</div>
-    <div style="font-size: 13px; color: var(--muted); margin-bottom: 24px;" id="sim-subtitle">Тестовий платіжний шлюз</div>
+    <div class="modal-title" id="sim-title" style="margin-bottom: 8px;"><span data-i18n="modal.sim_title">Симуляція оплати</span></div>
+    <div style="font-size: 13px; color: var(--muted); margin-bottom: 24px;" id="sim-subtitle"><span data-i18n="modal.sim_desc">Тестовий платіжний шлюз</span></div>
     
     <div style="background: var(--bg); border: 1px solid var(--border2); border-radius: 12px; padding: 20px; margin-bottom: 28px; text-align: left;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
-        <span style="color: var(--muted);">Призначення:</span>
+        <span style="color: var(--muted);"><span data-i18n="label.purpose">Призначення:</span></span>
         <span id="sim-desc">Оплата рахунку #--</span>
       </div>
       <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700;">
-        <span style="color: var(--muted);">Сума:</span>
+        <span style="color: var(--muted);"><span data-i18n="label.amount">Сума:</span></span>
         <span id="sim-amount" style="color: var(--green);">0.00 EUR</span>
       </div>
     </div>
@@ -1563,7 +1563,7 @@ async function doLogin() {
     showErr(err, e.message || 'Невірний email або пароль');
   } finally {
     btn.disabled = false;
-    document.getElementById('login-btn-text').textContent = 'Увійти';
+    document.getElementById('login-btn-text').textContent = '<span data-i18n="login.btn">Увійти</span>';
   }
 }
 
@@ -1662,7 +1662,7 @@ function renderSubCard(s, isAdmin) {
 
   const actions = [];
   if (s.update_url) actions.push(`<a href="${s.update_url}" target="_blank" class="btn btn-ghost btn-sm">Змінити картку</a>`);
-  if (s.cancel_url) actions.push(`<a href="${s.cancel_url}" target="_blank" class="btn btn-danger btn-sm">Скасувати</a>`);
+  if (s.cancel_url) actions.push(`<a href="${s.cancel_url}" target="_blank" class="btn btn-danger btn-sm" data-i18n="btn.cancel">Скасувати</a>`);
 
   return `
   <div class="sub-card">
@@ -1877,7 +1877,7 @@ function renderWebhookLogs(logs) {
   return `<div class="table-wrapper" style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th>Час</th><th>Подія</th><th>Email</th><th>Статус</th><th>Помилка</th><th>Paddle ID</th>
+        <th>Час</th><th>Подія</th><th>Email</th><th data-i18n="table.status">Статус</th><th>Помилка</th><th>Paddle ID</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -2183,7 +2183,7 @@ function renderTicketsTableClient(tickets) {
       <table>
         <thead>
           <tr>
-            <th>Тема</th><th>Статус</th><th>Створено</th><th>Оновлено</th><th></th>
+            <th>Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th>Оновлено</th><th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -2242,7 +2242,7 @@ async function loadTicketDetails(id) {
 
     let chatHtml = messages.map(m => {
       const isClient = m.sender_role === 'client';
-      const roleLabel = isClient ? 'Ви' : 'Підтримка';
+      const roleLabel = isClient ? 'Ви' : '<span data-i18n="nav.support">Підтримка</span>';
       const senderClass = isClient ? 'sender-client' : 'sender-admin';
       const msgClass = isClient ? 'client' : 'admin';
       return `
@@ -2382,7 +2382,7 @@ function renderTicketsTableAdmin(tickets) {
       <table>
         <thead>
           <tr>
-            <th>Клієнт</th><th>Тема</th><th>Статус</th><th>Створено</th><th>Оновлено</th><th></th>
+            <th data-i18n="table.client">Клієнт</th><th>Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th>Оновлено</th><th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -2566,7 +2566,7 @@ async function loadSettings() {
       <div style="max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px;">
         <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;">Профіль користувача</h3>
         <div class="field">
-          <label>Ім'я</label>
+          <label data-i18n="label.name">Ім'я</label>
           <input type="text" id="settings-name" placeholder="Ім'я">
         </div>
         <div class="field">
@@ -2664,7 +2664,93 @@ const i18n = {
       'txn.draft':     'Чернетка',
       'txn.ready':     'Незавершена',
       'txn.canceled':  'Скасована',
-    },
+    ,
+      'login.title': 'Вхід в систему',
+      'login.subtitle': 'Введіть дані для доступу до кабінету',
+      'login.password': 'Пароль',
+      'login.btn': 'Увійти',
+      'nav.billing': 'Моя підписка',
+      'nav.support': 'Підтримка',
+      'nav.invoices': 'Мої рахунки',
+      'nav.transactions': 'Транзакції',
+      'nav.settings': 'Налаштування',
+      'nav.admin_billing': 'Перевірка білінгу',
+      'nav.admin_clients': 'Клієнти',
+      'nav.admin_tickets': 'Тікети підтримки',
+      'nav.admin_invoices': 'Управління рахунками',
+      'nav.admin_logs': 'Логи',
+      'nav.logout': 'Вийти',
+      'page.billing_desc': 'Активні тарифи та терміни дії',
+      'btn.refresh': '↻ Оновити',
+      'page.admin_billing_desc': 'Подивитись підписки будь-якого клієнта',
+      'label.client_email': 'Email клієнта',
+      'btn.find': 'Знайти',
+      'page.admin_clients_desc': 'Управління акаунтами клієнтів',
+      'btn.new_client': '+ Новий клієнт',
+      'page.logs_title': 'Журнал подій',
+      'page.logs_desc': 'Логи авторизацій, WHM, Paddle, вебхуків',
+      'filter.all_levels': 'Всі рівні',
+      'page.support_title': 'Служба підтримки',
+      'page.support_desc': 'Створення запитів та переписка з адміністратором',
+      'btn.create_ticket': '+ Створити тікет',
+      'page.admin_tickets_desc': 'Усі запити від клієнтів',
+      'filter.all_statuses': 'Всі статуси',
+      'status.open_new': 'Open (Новий)',
+      'status.pending_client': 'Pending (Клієнт відповів)',
+      'status.replied': 'Replied (Відповідь надано)',
+      'status.closed': 'Closed (Закритий)',
+      'filter.title': 'Фільтр',
+      'table.invoice_num': 'Рахунок #',
+      'table.date': 'Дата',
+      'table.due': 'Термін',
+      'table.amount': 'Сума',
+      'table.status': 'Статус',
+      'page.txn_title': 'Транзакції (Paddle)',
+      'page.txn_desc': 'Історія ваших платежів.',
+      'table.txn_num': 'Транзакція #',
+      'table.created': 'Створено',
+      'table.charged': 'Списано',
+      'page.admin_invoices_title': 'Всі рахунки (Адмін)',
+      'page.admin_invoices_desc': 'Керування виставленими рахунками клієнтів.',
+      'btn.create_invoice': '+ Створити рахунок',
+      'table.client': 'Клієнт',
+      'page.settings_desc': 'Змініть ваше ім'я та пароль',
+      'modal.new_ticket': 'Новий запит підтримки',
+      'label.ticket_subject': 'Тема запиту',
+      'placeholder.ticket_subject': 'Коротко опишіть тему',
+      'label.message': 'Повідомлення',
+      'placeholder.ticket_message': 'Детально опишіть ваше запитання або проблему...',
+      'btn.cancel': 'Скасувати',
+      'btn.send_request': 'Надіслати запит',
+      'modal.new_client': 'Новий клієнт',
+      'label.name': 'Ім'я',
+      'placeholder.name': 'Іван Іваненко',
+      'label.password_req': 'Пароль *',
+      'placeholder.pwd_min': 'мін. 6 символів',
+      'label.whm_plan': 'WHM Пакет хостингу',
+      'btn.create_account': 'Створити акаунт',
+      'modal.edit_client': 'Редагувати клієнта',
+      'placeholder.client_name': 'Ім'я клієнта',
+      'label.pwd_optional': 'Пароль (залиште порожнім, щоб не змінювати)',
+      'placeholder.pwd_min2': ' мінімум 6 символів',
+      'btn.save_changes': 'Зберегти зміни',
+      'modal.new_invoice': 'Новий рахунок',
+      'label.select_client': 'Оберіть клієнта *',
+      'label.amount_req': 'Сума *',
+      'label.currency_req': 'Валюта *',
+      'label.due_date_req': 'Термін оплати *',
+      'btn.create': 'Створити',
+      'modal.invoice_details': 'Деталі рахунку',
+      'label.invoice_num': 'Номер рахунку:',
+      'label.amount_due': 'Сума до сплати:',
+      'label.created_date': 'Дата створення:',
+      'label.due_date': 'Термін оплати:',
+      'btn.close': 'Закрити',
+      'modal.sim_title': 'Симуляція оплати',
+      'modal.sim_desc': 'Тестовий платіжний шлюз',
+      'label.purpose': 'Призначення:',
+      'btn.confirm_pay': 'Підтвердити оплату',
+      'btn.cancel_pay': 'Скасувати платіж'},
     en: {
       'status.all': 'All',
       'inv.paid': 'Paid',
@@ -2681,13 +2767,102 @@ const i18n = {
       'txn.ready': 'Incomplete',
       'txn.canceled': 'Canceled',
     }
-  },
+  ,
+      'login.title': 'Sign in to the system',
+      'login.subtitle': 'Enter your credentials to access the cabinet',
+      'login.password': 'Password',
+      'login.btn': 'Sign In',
+      'nav.billing': 'My Subscription',
+      'nav.support': 'Support',
+      'nav.invoices': 'My Invoices',
+      'nav.transactions': 'Transactions',
+      'nav.settings': 'Settings',
+      'nav.admin_billing': 'Billing Check',
+      'nav.admin_clients': 'Clients',
+      'nav.admin_tickets': 'Support Tickets',
+      'nav.admin_invoices': 'Manage Invoices',
+      'nav.admin_logs': 'Logs',
+      'nav.logout': 'Logout',
+      'page.billing_desc': 'Active plans and expiration dates',
+      'btn.refresh': '↻ Refresh',
+      'page.admin_billing_desc': 'Check subscriptions of any client',
+      'label.client_email': 'Client Email',
+      'btn.find': 'Find',
+      'page.admin_clients_desc': 'Manage client accounts',
+      'btn.new_client': '+ New Client',
+      'page.logs_title': 'Event Log',
+      'page.logs_desc': 'Auth, WHM, Paddle, webhook logs',
+      'filter.all_levels': 'All levels',
+      'page.support_title': 'Support',
+      'page.support_desc': 'Create tickets and communicate with admin',
+      'btn.create_ticket': '+ Create Ticket',
+      'page.admin_tickets_desc': 'All requests from clients',
+      'filter.all_statuses': 'All statuses',
+      'status.open_new': 'Open (New)',
+      'status.pending_client': 'Pending (Client Replied)',
+      'status.replied': 'Replied (Admin Replied)',
+      'status.closed': 'Closed',
+      'filter.title': 'Filter',
+      'table.invoice_num': 'Invoice #',
+      'table.date': 'Date',
+      'table.due': 'Due Date',
+      'table.amount': 'Amount',
+      'table.status': 'Status',
+      'page.txn_title': 'Transactions (Paddle)',
+      'page.txn_desc': 'History of your payments.',
+      'table.txn_num': 'Transaction #',
+      'table.created': 'Created',
+      'table.charged': 'Charged',
+      'page.admin_invoices_title': 'All Invoices (Admin)',
+      'page.admin_invoices_desc': 'Manage issued client invoices.',
+      'btn.create_invoice': '+ Create Invoice',
+      'table.client': 'Client',
+      'page.settings_desc': 'Change your name and password',
+      'modal.new_ticket': 'New Support Ticket',
+      'label.ticket_subject': 'Ticket Subject',
+      'placeholder.ticket_subject': 'Briefly describe the topic',
+      'label.message': 'Message',
+      'placeholder.ticket_message': 'Describe your question or issue in detail...',
+      'btn.cancel': 'Cancel',
+      'btn.send_request': 'Send Request',
+      'modal.new_client': 'New Client',
+      'label.name': 'Name',
+      'placeholder.name': 'John Doe',
+      'label.password_req': 'Password *',
+      'placeholder.pwd_min': 'min. 6 characters',
+      'label.whm_plan': 'WHM Hosting Plan',
+      'btn.create_account': 'Create Account',
+      'modal.edit_client': 'Edit Client',
+      'placeholder.client_name': 'Client Name',
+      'label.pwd_optional': 'Password (leave blank to keep unchanged)',
+      'placeholder.pwd_min2': ' min. 6 characters',
+      'btn.save_changes': 'Save Changes',
+      'modal.new_invoice': 'New Invoice',
+      'label.select_client': 'Select Client *',
+      'label.amount_req': 'Amount *',
+      'label.currency_req': 'Currency *',
+      'label.due_date_req': 'Due Date *',
+      'btn.create': 'Create',
+      'modal.invoice_details': 'Invoice Details',
+      'label.invoice_num': 'Invoice Number:',
+      'label.amount_due': 'Amount Due:',
+      'label.created_date': 'Creation Date:',
+      'label.due_date': 'Due Date:',
+      'btn.close': 'Close',
+      'modal.sim_title': 'Payment Simulation',
+      'modal.sim_desc': 'Test payment gateway',
+      'label.purpose': 'Purpose:',
+      'btn.confirm_pay': 'Confirm Payment',
+      'btn.cancel_pay': 'Cancel Payment'},
   t(key) {
     return (this.locales[this.locale] || {})[key] || key;
   },
   apply() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
-      el.textContent = this.t(el.dataset.i18n);
+      el.innerHTML = this.t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = this.t(el.dataset.i18nPlaceholder);
     });
   }
 };
@@ -3120,7 +3295,7 @@ function payInvoice(id, amount, currency, method) {
   if (simIcon) simIcon.textContent = iconMap[method] || '💳';
   
   const simTitle = document.getElementById('sim-title');
-  if (simTitle) simTitle.textContent = titleMap[method] || 'Симуляція оплати';
+  if (simTitle) simTitle.textContent = titleMap[method] || '<span data-i18n="modal.sim_title">Симуляція оплати</span>';
   
   const simDesc = document.getElementById('sim-desc');
   if (simDesc) simDesc.textContent = `Оплата рахунку #${id}`;
