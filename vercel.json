@@ -1,11 +1,5 @@
 {
   "outputDirectory": "dist",
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://lemons.developer.pp.ua/api/:path*"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",

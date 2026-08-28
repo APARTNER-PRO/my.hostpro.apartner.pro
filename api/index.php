@@ -271,6 +271,7 @@ if ($method === 'POST' && $path === '/admin/billing/provision') {
         'wedbkrdb_Starter',
         'wedbkrdb_Personal',
         'wedbkrdb_Business',
+        'wedbkrdb_Business-Special',
         'wedbkrdb_Agency',
         'wedbkrdb_Agency Pro',
     ];
