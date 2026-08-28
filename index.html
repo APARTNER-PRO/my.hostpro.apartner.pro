@@ -1114,7 +1114,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+              <tr><td colspan="5" style="text-align:center;color:var(--muted)">${i18n.t("state.loading")}</td></tr>
             </tbody>
           </table>
         </div>
@@ -1195,7 +1195,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+              <tr><td colspan="5" style="text-align:center;color:var(--muted)">${i18n.t("state.loading")}</td></tr>
             </tbody>
           </table>
         </div>
@@ -1228,7 +1228,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td colspan="6" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+          <tr><td colspan="6" style="text-align:center;color:var(--muted)">${i18n.t("state.loading")}</td></tr>
         </tbody>
       </table>
     </div>
@@ -1645,24 +1645,17 @@ function renderSubs(subs, isAdmin) {
 
 function renderSubCard(s, isAdmin) {
   const statusClass = `status-${(s.status || 'unknown').replace('_','-')}`;
-  const statusLabel = {
-    active:    'Активна',
-    trialing:  'Тріал',
-    past_due:  'Прострочена',
-    canceled:  'Скасована',
-    paused:    'Призупинена',
-    unknown:   'Невідомо',
-  }[s.status] || s.status;
+  const statusLabel = i18n.t('sub.status.' + (s.status || 'unknown')) || s.status;
 
-  const fmt = v => v ? new Date(v).toLocaleDateString('uk-UA', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const fmt = v => v ? new Date(v).toLocaleDateString(i18n.locale === 'uk' ? 'uk-UA' : 'en-US', {day:'2-digit',month:'short',year:'numeric'}) : '—';
   const daysLeft = s.expires_at ? Math.ceil((new Date(s.expires_at) - Date.now()) / 86400000) : null;
   const daysLabel = daysLeft !== null
-    ? (daysLeft > 0 ? `${daysLeft} дн. залишилось` : 'Минув')
+    ? (daysLeft > 0 ? `${daysLeft}${i18n.t('sub.days_left')}` : i18n.t('sub.expired'))
     : '';
 
   const actions = [];
-  if (s.update_url) actions.push(`<a href="${s.update_url}" target="_blank" class="btn btn-ghost btn-sm">Змінити картку</a>`);
-  if (s.cancel_url) actions.push(`<a href="${s.cancel_url}" target="_blank" class="btn btn-danger btn-sm" data-i18n="btn.cancel">Скасувати</a>`);
+  if (s.update_url) actions.push(`<a href="${s.update_url}" target="_blank" class="btn btn-ghost btn-sm">${i18n.t('btn.change_card')}</a>`);
+  if (s.cancel_url) actions.push(`<a href="${s.cancel_url}" target="_blank" class="btn btn-danger btn-sm">${i18n.t('btn.cancel')}</a>`);
 
   return `
   <div class="sub-card">
@@ -1676,19 +1669,19 @@ function renderSubCard(s, isAdmin) {
 
     <div class="sub-meta">
       <div class="meta-item">
-        <label>Початок</label>
+        <label>${i18n.t('sub.label.start')}</label>
         <span>${fmt(s.started_at)}</span>
       </div>
       <div class="meta-item">
-        <label>Дійсна до</label>
+        <label>${i18n.t('sub.label.valid_until')}</label>
         <span>${fmt(s.expires_at)}${daysLabel ? `<br><small style="color:var(--muted);font-size:11px">${daysLabel}</small>` : ''}</span>
       </div>
       ${s.next_payment ? `<div class="meta-item">
-        <label>Наступний платіж</label>
+        <label>${i18n.t('sub.label.next_payment')}</label>
         <span>${fmt(s.next_payment)}</span>
       </div>` : ''}
       <div class="meta-item">
-        <label>Джерело</label>
+        <label>${i18n.t('sub.label.source')}</label>
         <span>Paddle ${s.api_version || ''}</span>
       </div>
     </div>
@@ -2648,6 +2641,20 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'sub.status.active': 'Активна',
+      'sub.status.trialing': 'Тріал',
+      'sub.status.past_due': 'Прострочена',
+      'sub.status.canceled': 'Скасована',
+      'sub.status.paused': 'Призупинена',
+      'sub.status.unknown': 'Невідомо',
+      'sub.days_left': ' дн. залишилось',
+      'sub.expired': 'Минув',
+      'sub.label.start': 'Початок',
+      'sub.label.valid_until': 'Дійсна до',
+      'sub.label.next_payment': 'Наступний платіж',
+      'sub.label.source': 'Джерело',
+      'btn.change_card': 'Змінити картку',
+      'state.loading': 'Завантаження...',
       'status.all': 'Усі',
       // Статуси Paddle Invoice
       'inv.paid':      'Оплачений',
@@ -2753,6 +2760,20 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'sub.status.active': 'Active',
+      'sub.status.trialing': 'Trialing',
+      'sub.status.past_due': 'Past Due',
+      'sub.status.canceled': 'Canceled',
+      'sub.status.paused': 'Paused',
+      'sub.status.unknown': 'Unknown',
+      'sub.days_left': ' days left',
+      'sub.expired': 'Expired',
+      'sub.label.start': 'Start Date',
+      'sub.label.valid_until': 'Valid Until',
+      'sub.label.next_payment': 'Next Payment',
+      'sub.label.source': 'Source',
+      'btn.change_card': 'Change Card',
+      'state.loading': 'Loading...',
       'status.all': 'All',
       'inv.paid': 'Paid',
       'inv.completed': 'Completed',
@@ -2888,7 +2909,7 @@ let _activeTxnFilter = 'all';
 async function loadTransactions() {
   const tbody = document.querySelector('#transactions-table tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">${i18n.t("state.loading")}</td></tr>';
 
   try {
     const data = await apiFetch('/client/transactions');
@@ -2980,7 +3001,7 @@ let _activeInvoiceFilter = 'all';
 
 async function loadInvoices() {
   const tbody = document.querySelector('#invoices-table tbody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">${i18n.t("state.loading")}</td></tr>';
 
   try {
     const data = await apiFetch('/client/invoices');
@@ -3062,7 +3083,7 @@ function filterInvoices(status) {
 
 async function loadAdminInvoices() {
   const tbody = document.querySelector('#admin-invoices-table tbody');
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">${i18n.t("state.loading")}</td></tr>';
   try {
     const data = await apiFetch('/admin/invoices');
     if (!data.invoices.length) {
