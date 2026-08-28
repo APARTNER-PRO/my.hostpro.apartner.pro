@@ -1046,23 +1046,56 @@
       <p class="page-sub">Історія ваших платежів.</p>
     </div>
   </div>
-  <div class="panel">
-    <div class="table-container">
-      <table class="table" id="transactions-table">
-        <thead>
-          <tr>
-            <th>Транзакція #</th>
-            <th>Створено</th>
-            <th>Списано</th>
-            <th>Сума</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
-        </tbody>
-      </table>
+
+  <div style="display:flex; gap:24px; align-items:flex-start;">
+
+    <!-- Sidebar: status filters -->
+    <div id="txn-sidebar" style="width:200px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
+      <div style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
+
+      <div id="txn-filter-all" onclick="filterTransactions('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--accent);">Усі</span>
+        <span id="txn-count-all" style="font-size:12px; font-weight:700; background:var(--border2); color:var(--text); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="txn-filter-paid" onclick="filterTransactions('paid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Оплачені</span>
+        <span id="txn-count-paid" style="font-size:12px; font-weight:700; background:rgba(34,211,160,.15); color:var(--green); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="txn-filter-unpaid" onclick="filterTransactions('unpaid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Неоплачені</span>
+        <span id="txn-count-unpaid" style="font-size:12px; font-weight:700; background:rgba(245,200,66,.15); color:var(--yellow); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="txn-filter-cancelled" onclick="filterTransactions('cancelled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Відмінені</span>
+        <span id="txn-count-cancelled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
     </div>
+
+    <!-- Right: transactions table -->
+    <div style="flex:1; min-width:0;">
+      <div class="panel">
+        <div class="table-container">
+          <table class="table" id="transactions-table">
+            <thead>
+              <tr>
+                <th>Транзакція #</th>
+                <th>Створено</th>
+                <th>Списано</th>
+                <th>Сума</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2473,6 +2506,9 @@ async function savePaymentSettings() {
 // ═══════════════════════════════════════════
 //  TRANSACTIONS
 // ═══════════════════════════════════════════
+let _allTransactions = [];
+let _activeTxnFilter = 'all';
+
 async function loadTransactions() {
   const tbody = document.querySelector('#transactions-table tbody');
   if (!tbody) return;
@@ -2480,25 +2516,59 @@ async function loadTransactions() {
 
   try {
     const data = await apiFetch('/client/transactions');
-    const txns = data.transactions || [];
+    _allTransactions = data.transactions || [];
 
-    if (!txns.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає транзакцій</td></tr>`;
-      return;
-    }
+    // Count per status
+    const counts = { all: _allTransactions.length, paid: 0, unpaid: 0, cancelled: 0 };
+    _allTransactions.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
 
-    tbody.innerHTML = txns.map(t => `
-      <tr>
-        <td><b style="font-family:var(--mono);font-size:12px;">#${t.id}</b></td>
-        <td>${fmtDate(t.created_at)}</td>
-        <td>${fmtDate(t.due_date)}</td>
-        <td>${parseFloat(t.amount).toFixed(2)} ${t.currency}</td>
-        <td>${invoiceStatusLabels[t.status] || t.status}</td>
-      </tr>
-    `).join('');
+    document.getElementById('txn-count-all').textContent       = counts.all;
+    document.getElementById('txn-count-paid').textContent      = counts.paid;
+    document.getElementById('txn-count-unpaid').textContent    = counts.unpaid;
+    document.getElementById('txn-count-cancelled').textContent = counts.cancelled;
+
+    filterTransactions(_activeTxnFilter);
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red)">Помилка: ${e.message}</td></tr>`;
   }
+}
+
+function filterTransactions(status) {
+  _activeTxnFilter = status;
+
+  ['all', 'paid', 'unpaid', 'cancelled'].forEach(s => {
+    const el = document.getElementById('txn-filter-' + s);
+    if (!el) return;
+    const labelEl = el.querySelector('span:first-child');
+    if (s === status) {
+      el.style.borderLeft = '3px solid var(--accent)';
+      el.style.background = 'rgba(79,142,247,.06)';
+      labelEl.style.color = 'var(--accent)';
+    } else {
+      el.style.borderLeft = '3px solid transparent';
+      el.style.background = 'transparent';
+      labelEl.style.color = 'var(--muted)';
+    }
+  });
+
+  const tbody = document.querySelector('#transactions-table tbody');
+  const filtered = status === 'all' ? _allTransactions : _allTransactions.filter(t => t.status === status);
+
+  if (!filtered.length) {
+    const labels = { paid: 'оплачених', unpaid: 'неоплачених', cancelled: 'відмінених', all: 'транзакцій' };
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає ${labels[status] || status}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(t => `
+    <tr>
+      <td><b style="font-family:var(--mono);font-size:12px;">#${t.id}</b></td>
+      <td>${fmtDate(t.created_at)}</td>
+      <td>${fmtDate(t.due_date)}</td>
+      <td>${parseFloat(t.amount).toFixed(2)} ${t.currency}</td>
+      <td>${invoiceStatusLabels[t.status] || t.status}</td>
+    </tr>
+  `).join('');
 }
 
 // ═══════════════════════════════════════════
