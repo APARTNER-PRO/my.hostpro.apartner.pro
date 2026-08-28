@@ -1058,19 +1058,39 @@
         <span id="txn-count-all" style="font-size:12px; font-weight:700; background:var(--border2); color:var(--text); border-radius:20px; padding:2px 8px;">0</span>
       </div>
 
+      <div id="txn-filter-completed" onclick="filterTransactions('completed')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Completed</span>
+        <span id="txn-count-completed" style="font-size:12px; font-weight:700; background:rgba(34,211,160,.15); color:var(--green); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
       <div id="txn-filter-paid" onclick="filterTransactions('paid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">Оплачені</span>
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Paid</span>
         <span id="txn-count-paid" style="font-size:12px; font-weight:700; background:rgba(34,211,160,.15); color:var(--green); border-radius:20px; padding:2px 8px;">0</span>
       </div>
 
-      <div id="txn-filter-unpaid" onclick="filterTransactions('unpaid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">Неоплачені</span>
-        <span id="txn-count-unpaid" style="font-size:12px; font-weight:700; background:rgba(245,200,66,.15); color:var(--yellow); border-radius:20px; padding:2px 8px;">0</span>
+      <div id="txn-filter-billed" onclick="filterTransactions('billed')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Billed</span>
+        <span id="txn-count-billed" style="font-size:12px; font-weight:700; background:rgba(79,142,247,.15); color:var(--accent); border-radius:20px; padding:2px 8px;">0</span>
       </div>
 
-      <div id="txn-filter-cancelled" onclick="filterTransactions('cancelled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">Відмінені</span>
-        <span id="txn-count-cancelled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      <div id="txn-filter-past_due" onclick="filterTransactions('past_due')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Past Due</span>
+        <span id="txn-count-past_due" style="font-size:12px; font-weight:700; background:rgba(247,90,90,.15); color:var(--red); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="txn-filter-draft" onclick="filterTransactions('draft')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Draft</span>
+        <span id="txn-count-draft" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="txn-filter-ready" onclick="filterTransactions('ready')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Incomplete</span>
+        <span id="txn-count-ready" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="txn-filter-canceled" onclick="filterTransactions('canceled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Canceled</span>
+        <span id="txn-count-canceled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
       </div>
     </div>
 
@@ -2506,6 +2526,19 @@ async function savePaymentSettings() {
 // ═══════════════════════════════════════════
 //  TRANSACTIONS
 // ═══════════════════════════════════════════
+// Statuses: draft | ready | billed | completed | canceled | past_due | paid
+const TXN_STATUSES = ['all','completed','paid','billed','past_due','draft','ready','canceled'];
+
+const txnStatusLabels = {
+  'draft':     '<span style="color:var(--muted)">Draft</span>',
+  'ready':     '<span style="color:var(--muted)">Incomplete</span>',
+  'billed':    '<span style="color:var(--accent)">Billed</span>',
+  'completed': '<span style="color:var(--green)">Completed</span>',
+  'canceled':  '<span style="color:var(--muted)">Canceled</span>',
+  'past_due':  '<span style="color:var(--red)">Past Due</span>',
+  'paid':      '<span style="color:var(--green)">Paid</span>',
+};
+
 let _allTransactions = [];
 let _activeTxnFilter = 'all';
 
@@ -2519,13 +2552,13 @@ async function loadTransactions() {
     _allTransactions = data.transactions || [];
 
     // Count per status
-    const counts = { all: _allTransactions.length, paid: 0, unpaid: 0, cancelled: 0 };
+    const counts = { all: _allTransactions.length, completed:0, paid:0, billed:0, past_due:0, draft:0, ready:0, canceled:0 };
     _allTransactions.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
 
-    document.getElementById('txn-count-all').textContent       = counts.all;
-    document.getElementById('txn-count-paid').textContent      = counts.paid;
-    document.getElementById('txn-count-unpaid').textContent    = counts.unpaid;
-    document.getElementById('txn-count-cancelled').textContent = counts.cancelled;
+    TXN_STATUSES.forEach(s => {
+      const el = document.getElementById('txn-count-' + s);
+      if (el) el.textContent = counts[s] ?? 0;
+    });
 
     filterTransactions(_activeTxnFilter);
   } catch (e) {
@@ -2536,7 +2569,7 @@ async function loadTransactions() {
 function filterTransactions(status) {
   _activeTxnFilter = status;
 
-  ['all', 'paid', 'unpaid', 'cancelled'].forEach(s => {
+  TXN_STATUSES.forEach(s => {
     const el = document.getElementById('txn-filter-' + s);
     if (!el) return;
     const labelEl = el.querySelector('span:first-child');
@@ -2555,8 +2588,7 @@ function filterTransactions(status) {
   const filtered = status === 'all' ? _allTransactions : _allTransactions.filter(t => t.status === status);
 
   if (!filtered.length) {
-    const labels = { paid: 'оплачених', unpaid: 'неоплачених', cancelled: 'відмінених', all: 'транзакцій' };
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає ${labels[status] || status}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає транзакцій</td></tr>`;
     return;
   }
 
@@ -2566,7 +2598,7 @@ function filterTransactions(status) {
       <td>${fmtDate(t.created_at)}</td>
       <td>${fmtDate(t.due_date)}</td>
       <td>${parseFloat(t.amount).toFixed(2)} ${t.currency}</td>
-      <td>${invoiceStatusLabels[t.status] || t.status}</td>
+      <td>${txnStatusLabels[t.status] || t.status}</td>
     </tr>
   `).join('');
 }

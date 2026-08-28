@@ -139,13 +139,6 @@ class PaddleService
 
         $result = [];
         foreach ($txns['data'] as $txn) {
-            $statusMap = [
-                'completed' => 'paid',
-                'billed'    => 'unpaid',
-                'past_due'  => 'unpaid',
-                'canceled'  => 'cancelled',
-            ];
-            $status = $statusMap[$txn['status']] ?? 'paid';
             $amount = (float)($txn['details']['totals']['total'] ?? 0) / 100;
 
             $result[] = [
@@ -154,7 +147,7 @@ class PaddleService
                 'due_date'   => $txn['billed_at'] ?? $txn['created_at'],
                 'amount'     => $amount,
                 'currency'   => $txn['currency_code'] ?? 'USD',
-                'status'     => $status,
+                'status'     => $txn['status'], // draft|ready|billed|completed|canceled|past_due|paid
                 'is_paddle'  => true,
             ];
         }
