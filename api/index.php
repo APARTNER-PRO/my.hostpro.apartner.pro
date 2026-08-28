@@ -815,16 +815,8 @@ if ($method === 'GET' && preg_match('#^/client/invoices$#', $path)) {
     $invoices = $stmt->fetchAll();
 
     try {
-        $paddle = new PaddleService();
-        $paddleTxns = $paddle->getTransactionsByEmail($user['email']);
-        
-        $invoices = array_merge($invoices, $paddleTxns);
-        
-        usort($invoices, function($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
-        });
+        // Ми перенесли отримання транзакцій в окремий ендпоінт /client/transactions
     } catch (\Throwable $e) {
-        // Пропускаємо помилки Paddle, щоб локальні рахунки все одно показалися
     }
 
     $stats = [
@@ -843,6 +835,24 @@ if ($method === 'GET' && preg_match('#^/client/invoices$#', $path)) {
     }
 
     respond(['invoices' => $invoices, 'stats' => $stats]);
+}
+
+// ── TRANSACTIONS (Клієнт - Paddle) ────────────────────────────────────────────
+if ($method === 'GET' && preg_match('#^/client/transactions$#', $path)) {
+    $user = AuthMiddleware::requireAuth();
+    
+    try {
+        $paddle = new PaddleService();
+        $transactions = $paddle->getTransactionsByEmail($user['email']);
+        
+        usort($transactions, function($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
+        
+        respond(['transactions' => $transactions]);
+    } catch (\Throwable $e) {
+        respond(['error' => $e->getMessage()], 500);
+    }
 }
 
 // ── USERS (Адмін - для селекта клієнтів) ──────────────────────────────────────

@@ -792,6 +792,9 @@
       <div class="nav-item" onclick="showView('invoices'); loadInvoices()">
         <span class="nav-icon">🧾</span> Мої рахунки
       </div>
+      <div class="nav-item" onclick="showView('transactions'); loadTransactions()">
+        <span class="nav-icon">💸</span> Транзакції
+      </div>
       <div class="nav-item" onclick="showView('settings'); loadSettings()">
         <span class="nav-icon">⚙️</span> Налаштування
       </div>
@@ -1032,6 +1035,34 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ── VIEW: TRANSACTIONS (Client) ── -->
+<div class="view" id="view-transactions">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Транзакції (Paddle)</h2>
+      <p class="page-sub">Історія ваших платежів.</p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="table-container">
+      <table class="table" id="transactions-table">
+        <thead>
+          <tr>
+            <th>Транзакція #</th>
+            <th>Створено</th>
+            <th>Списано</th>
+            <th>Сума</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -2439,6 +2470,37 @@ async function savePaymentSettings() {
     toast('Не вдалося зберегти налаштування: ' + e.message, 'error');
   }
 }
+// ═══════════════════════════════════════════
+//  TRANSACTIONS
+// ═══════════════════════════════════════════
+async function loadTransactions() {
+  const tbody = document.querySelector('#transactions-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Завантаження...</td></tr>';
+
+  try {
+    const data = await apiFetch('/client/transactions');
+    const txns = data.transactions || [];
+
+    if (!txns.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає транзакцій</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = txns.map(t => `
+      <tr>
+        <td><b style="font-family:var(--mono);font-size:12px;">#${t.id}</b></td>
+        <td>${fmtDate(t.created_at)}</td>
+        <td>${fmtDate(t.due_date)}</td>
+        <td>${parseFloat(t.amount).toFixed(2)} ${t.currency}</td>
+        <td>${invoiceStatusLabels[t.status] || t.status}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red)">Помилка: ${e.message}</td></tr>`;
+  }
+}
+
 // ═══════════════════════════════════════════
 //  INVOICES
 // ═══════════════════════════════════════════
