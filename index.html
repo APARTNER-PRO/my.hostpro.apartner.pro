@@ -985,27 +985,53 @@
     <div id="inv-sidebar" style="width:200px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
       <div style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
 
-      <div id="inv-filter-all" class="inv-filter-item active" onclick="filterInvoices('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
+      <div id="inv-filter-all" onclick="filterInvoices('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--accent);">Усі</span>
         <span id="inv-count-all" style="font-size:12px; font-weight:700; background:var(--border2); color:var(--text); border-radius:20px; padding:2px 8px;">0</span>
       </div>
 
-      <div id="inv-filter-unpaid" class="inv-filter-item" onclick="filterInvoices('unpaid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+      <div id="inv-filter-paid" onclick="filterInvoices('paid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Paid</span>
+        <span id="inv-count-paid" style="font-size:12px; font-weight:700; background:rgba(34,211,160,.15); color:var(--green); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-completed" onclick="filterInvoices('completed')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Complete</span>
+        <span id="inv-count-completed" style="font-size:12px; font-weight:700; background:rgba(34,211,160,.15); color:var(--green); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-billed" onclick="filterInvoices('billed')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Unpaid invoice</span>
+        <span id="inv-count-billed" style="font-size:12px; font-weight:700; background:rgba(245,200,66,.15); color:var(--yellow); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-past_due" onclick="filterInvoices('past_due')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Past due</span>
+        <span id="inv-count-past_due" style="font-size:12px; font-weight:700; background:rgba(247,90,90,.15); color:var(--red); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-draft" onclick="filterInvoices('draft')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Draft</span>
+        <span id="inv-count-draft" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <div id="inv-filter-canceled" onclick="filterInvoices('canceled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+        <span style="font-size:13px; font-weight:600; color:var(--muted);">Canceled</span>
+        <span id="inv-count-canceled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
+      </div>
+
+      <!-- Legacy local DB statuses -->
+      <div id="inv-filter-unpaid" onclick="filterInvoices('unpaid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--muted);">Неоплачені</span>
         <span id="inv-count-unpaid" style="font-size:12px; font-weight:700; background:rgba(245,200,66,.15); color:var(--yellow); border-radius:20px; padding:2px 8px;">0</span>
       </div>
 
-      <div id="inv-filter-paid" class="inv-filter-item" onclick="filterInvoices('paid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">Оплачені</span>
-        <span id="inv-count-paid" style="font-size:12px; font-weight:700; background:rgba(34,211,160,.15); color:var(--green); border-radius:20px; padding:2px 8px;">0</span>
-      </div>
-
-      <div id="inv-filter-cancelled" class="inv-filter-item" onclick="filterInvoices('cancelled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+      <div id="inv-filter-cancelled" onclick="filterInvoices('cancelled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--muted);">Відмінені</span>
         <span id="inv-count-cancelled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
       </div>
 
-      <div id="inv-filter-refunded" class="inv-filter-item" onclick="filterInvoices('refunded')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
+      <div id="inv-filter-refunded" onclick="filterInvoices('refunded')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--muted);">Повернено</span>
         <span id="inv-count-refunded" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
       </div>
@@ -2606,11 +2632,23 @@ function filterTransactions(status) {
 // ═══════════════════════════════════════════
 //  INVOICES
 // ═══════════════════════════════════════════
+// Paddle Invoice statuses: draft | ready | billed | past_due | completed | paid | canceled
+// Legacy local statuses:   unpaid | paid | cancelled | refunded
+const INV_STATUSES = ['all','paid','completed','billed','past_due','draft','canceled','unpaid','cancelled','refunded'];
+
 const invoiceStatusLabels = {
-  'unpaid': '<span style="color:var(--yellow)">Неоплачений</span>',
-  'paid': '<span style="color:var(--green)">Оплачений</span>',
+  // Paddle
+  'draft':     '<span style="color:var(--muted)">Draft</span>',
+  'ready':     '<span style="color:var(--muted)">Draft</span>',
+  'billed':    '<span style="color:var(--yellow)">Unpaid invoice</span>',
+  'past_due':  '<span style="color:var(--red)">Past due</span>',
+  'completed': '<span style="color:var(--green)">Complete</span>',
+  'paid':      '<span style="color:var(--green)">Paid</span>',
+  'canceled':  '<span style="color:var(--muted)">Canceled</span>',
+  // Legacy local
+  'unpaid':    '<span style="color:var(--yellow)">Неоплачений</span>',
   'cancelled': '<span style="color:var(--muted)">Відмінений</span>',
-  'refunded': '<span style="color:var(--muted)">Повернено</span>'
+  'refunded':  '<span style="color:var(--muted)">Повернено</span>',
 };
 
 let _allInvoices = [];
@@ -2625,24 +2663,26 @@ async function loadInvoices() {
     _allInvoices = data.invoices || [];
 
     // Count per status
-    const counts = { all: _allInvoices.length, unpaid: 0, paid: 0, cancelled: 0, refunded: 0 };
+    const counts = {};
+    INV_STATUSES.forEach(s => counts[s] = 0);
+    counts.all = _allInvoices.length;
     _allInvoices.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
 
-    document.getElementById('inv-count-all').textContent       = counts.all;
-    document.getElementById('inv-count-unpaid').textContent    = counts.unpaid;
-    document.getElementById('inv-count-paid').textContent      = counts.paid;
-    document.getElementById('inv-count-cancelled').textContent = counts.cancelled;
-    document.getElementById('inv-count-refunded').textContent  = counts.refunded;
+    INV_STATUSES.forEach(s => {
+      const el = document.getElementById('inv-count-' + s);
+      if (el) el.textContent = counts[s] ?? 0;
+    });
 
     // Show alert if all paid or none
     const alertEl = document.getElementById('invoices-alert');
     alertEl.style.display = 'none';
+    const unpaidCount = (counts.unpaid || 0) + (counts.billed || 0) + (counts.past_due || 0);
     if (counts.all === 0) {
       alertEl.innerHTML = 'У вас ще немає жодного рахунку.';
       alertEl.style.background = 'var(--border)';
       alertEl.style.color = 'var(--text)';
       alertEl.style.display = 'block';
-    } else if (counts.unpaid === 0) {
+    } else if (unpaidCount === 0) {
       alertEl.innerHTML = '✅ Всі рахунки оплачені.';
       alertEl.style.background = 'rgba(34,211,160,0.1)';
       alertEl.style.color = 'var(--green)';
@@ -2658,8 +2698,7 @@ async function loadInvoices() {
 function filterInvoices(status) {
   _activeInvoiceFilter = status;
 
-  // Update sidebar active state
-  ['all','unpaid','paid','cancelled','refunded'].forEach(s => {
+  INV_STATUSES.forEach(s => {
     const el = document.getElementById('inv-filter-' + s);
     if (!el) return;
     const labelEl = el.querySelector('span:first-child');
