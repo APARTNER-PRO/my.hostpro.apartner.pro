@@ -1019,22 +1019,6 @@
         <span style="font-size:13px; font-weight:600; color:var(--muted);">Canceled</span>
         <span id="inv-count-canceled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
       </div>
-
-      <!-- Legacy local DB statuses -->
-      <div id="inv-filter-unpaid" onclick="filterInvoices('unpaid')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">Неоплачені</span>
-        <span id="inv-count-unpaid" style="font-size:12px; font-weight:700; background:rgba(245,200,66,.15); color:var(--yellow); border-radius:20px; padding:2px 8px;">0</span>
-      </div>
-
-      <div id="inv-filter-cancelled" onclick="filterInvoices('cancelled')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">Відмінені</span>
-        <span id="inv-count-cancelled" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
-      </div>
-
-      <div id="inv-filter-refunded" onclick="filterInvoices('refunded')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid transparent; transition:all .15s;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">Повернено</span>
-        <span id="inv-count-refunded" style="font-size:12px; font-weight:700; background:rgba(90,100,120,.15); color:var(--muted); border-radius:20px; padding:2px 8px;">0</span>
-      </div>
     </div>
 
     <!-- Right: invoice table -->
@@ -2632,9 +2616,8 @@ function filterTransactions(status) {
 // ═══════════════════════════════════════════
 //  INVOICES
 // ═══════════════════════════════════════════
-// Paddle Invoice statuses: draft | ready | billed | past_due | completed | paid | canceled
-// Legacy local statuses:   unpaid | paid | cancelled | refunded
-const INV_STATUSES = ['all','paid','completed','billed','past_due','draft','canceled','unpaid','cancelled','refunded'];
+// Paddle Invoice statuses (6 total)
+const INV_STATUSES = ['all', 'paid', 'completed', 'billed', 'past_due', 'draft', 'canceled'];
 
 const invoiceStatusLabels = {
   // Paddle
