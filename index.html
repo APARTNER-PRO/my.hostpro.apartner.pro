@@ -2600,24 +2600,45 @@ async function loadSettings() {
   }
 }
 
+// Password policy — mirrors backend PasswordPolicy.php
+function validatePassword(pw) {
+  const errors = [];
+  if (pw.length < 8)                    errors.push(i18n.t('pwd.min_length'));
+  if (!/[A-Z]/.test(pw))               errors.push(i18n.t('pwd.need_upper'));
+  if (!/[a-z]/.test(pw))               errors.push(i18n.t('pwd.need_lower'));
+  if (!/[0-9]/.test(pw))               errors.push(i18n.t('pwd.need_digit'));
+  if (!/[!@#$%^&*()\-_=+\[\]{}|;:'",.<>/?\\]/.test(pw)) errors.push(i18n.t('pwd.need_special'));
+  return errors;
+}
+
 async function saveSettings() {
-  const name = document.getElementById('settings-name').value.trim();
+  const name     = document.getElementById('settings-name').value.trim();
   const password = document.getElementById('settings-password').value;
-  const lang = document.getElementById('settings-lang').value;
-  const err = document.getElementById('settings-error');
+  const lang     = document.getElementById('settings-lang').value;
+  const err      = document.getElementById('settings-error');
   err.classList.remove('show');
-  
+
   if (lang !== i18n.locale) {
     localStorage.setItem('app_lang', lang);
     i18n.locale = lang;
     i18n.apply();
   }
 
-  if (!name && !password && lang === i18n.locale) { showErr(err, 'Заповніть хоча б одне поле'); return; }
-  
+  if (!name && !password) { showErr(err, i18n.t('error.fill_one_field')); return; }
+
+  // Client-side password policy check
+  if (password) {
+    const pwdErrors = validatePassword(password);
+    if (pwdErrors.length) {
+      showErr(err, pwdErrors[0]);
+      return;
+    }
+  }
+
   try {
     await apiFetch('/auth/profile', 'PUT', { name, password });
-    toast('Профіль успішно оновлено', 'success');
+    toast(i18n.t('toast.profile_saved'), 'success');
+    if (password) document.getElementById('settings-password').value = '';
   } catch (e) {
     showErr(err, e.message);
   }
@@ -2644,6 +2665,16 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'pwd.min_length': 'Пароль повинен містити щонайменше 8 символів',
+      'pwd.need_upper': 'Пароль повинен містити хоча б одну велику літеру (A-Z)',
+      'pwd.need_lower': 'Пароль повинен містити хоча б одну малу літеру (a-z)',
+      'pwd.need_digit': 'Пароль повинен містити хоча б одну цифру (0-9)',
+      'pwd.need_special': 'Пароль повинен містити хоча б один спеціальний символ (!@#$%...)',
+      'placeholder.pwd_min2': 'мінімум 8 символів, велика літера, цифра, спецсимвол',
+      'toast.profile_saved': 'Профіль успішно оновлено',
+      'error.fill_one_field': 'Заповніть хоча б одне поле',
+      'login.err_invalid': 'Невірний email або пароль',
+      'error.too_many_attempts': 'Забагато невдалих спроб. Спробуйте пізніше.',
       'empty.no_invoices': 'Рахунків не знайдено',
       'empty.no_webhooks': 'Webhook подій немає',
       'tab.events': '📋 Події',
@@ -2839,6 +2870,16 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'pwd.min_length': 'Password must be at least 8 characters long',
+      'pwd.need_upper': 'Password must contain at least one uppercase letter (A-Z)',
+      'pwd.need_lower': 'Password must contain at least one lowercase letter (a-z)',
+      'pwd.need_digit': 'Password must contain at least one digit (0-9)',
+      'pwd.need_special': 'Password must contain at least one special character (!@#$%...)',
+      'placeholder.pwd_min2': 'min 8 chars, uppercase, digit, special char',
+      'toast.profile_saved': 'Profile successfully saved',
+      'error.fill_one_field': 'Please fill in at least one field',
+      'login.err_invalid': 'Invalid email or password',
+      'error.too_many_attempts': 'Too many failed attempts. Please try again later.',
       'empty.no_invoices': 'No invoices found',
       'empty.no_webhooks': 'No webhook events found',
       'tab.events': '📋 Events',

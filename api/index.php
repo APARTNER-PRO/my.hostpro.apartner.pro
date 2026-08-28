@@ -21,6 +21,8 @@ require_once __DIR__ . '/src/WhmService.php';
 require_once __DIR__ . '/src/Logger.php';
 require_once __DIR__ . '/src/Mailer.php';
 require_once __DIR__ . '/src/PaddleWebhook.php';
+require_once __DIR__ . '/src/RateLimiter.php';
+require_once __DIR__ . '/src/PasswordPolicy.php';
 
 $cfg  = require __DIR__ . '/config/config.php';
 
@@ -98,30 +100,70 @@ function respond(mixed $data, int $code = 200): never
 if ($method === 'POST' && $path === '/auth/login') {
     $email    = strtolower(trim($body['email']    ?? ''));
     $password = trim($body['password'] ?? '');
+    $ip       = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
     if (!$email || !$password) respond(['error' => 'Email and password required'], 400);
 
-    // Адмін через .env (не зберігається в БД)
+    // ── Rate Limiting ─────────────────────────────────────────────────────────
+    $rateCheck = RateLimiter::check($ip, $email);
+    if ($rateCheck['blocked']) {
+        $minutes = ceil($rateCheck['retry_after'] / 60);
+        Logger::warning('auth.blocked', 'Login blocked by rate limiter', $email, [
+            'ip'          => $ip,
+            'attempts'    => $rateCheck['attempts'],
+            'retry_after' => $rateCheck['retry_after'],
+        ]);
+        respond([
+            'error'       => "Забагато невдалих спроб. Спробуйте через {$minutes} хв.",
+            'retry_after' => $rateCheck['retry_after'],
+        ], 429);
+    }
+
+    // ── Admin login via .env ──────────────────────────────────────────────────
     if ($email === strtolower($cfg['admin_email']) && $password === $cfg['admin_password']) {
+        RateLimiter::reset($ip, $email);
         $token = JWT::encode([
             'sub'   => 0,
             'email' => $email,
             'role'  => 'admin',
             'exp'   => time() + $cfg['jwt_ttl'],
         ], $cfg['jwt_secret']);
-        Logger::info('auth.login', 'Admin login', $email, ['ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
+        Logger::info('auth.login', 'Admin login', $email, ['ip' => $ip]);
         respond(['token' => $token, 'role' => 'admin', 'email' => $email]);
     }
 
+    // ── Client login from DB ──────────────────────────────────────────────────
     $db   = Database::get();
     $stmt = $db->prepare('SELECT * FROM users WHERE email = ?');
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
     if (!$user || !password_verify($password, $user['password'])) {
-        Logger::warning('auth.failed', 'Failed login attempt', $email, ['ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
-        respond(['error' => 'Invalid credentials'], 401);
+        $attempts = RateLimiter::recordFailure($ip, $email);
+        $remaining = max(0, 5 - $attempts);
+        Logger::warning('auth.failed', 'Failed login attempt', $email, [
+            'ip'              => $ip,
+            'attempts_window' => $attempts,
+            'attempts_left'   => $remaining,
+        ]);
+        if ($remaining === 0) {
+            Logger::error('auth.lockout', 'Account locked out after too many failures', $email, [
+                'ip'       => $ip,
+                'attempts' => $attempts,
+            ]);
+            respond([
+                'error'       => 'Забагато невдалих спроб. Спробуйте через 15 хв.',
+                'retry_after' => 900,
+            ], 429);
+        }
+        respond([
+            'error'         => 'Невірний email або пароль',
+            'attempts_left' => $remaining,
+        ], 401);
     }
+
+    // Успішний вхід — скидаємо лічильник
+    RateLimiter::reset($ip, $email);
 
     $token = JWT::encode([
         'sub'   => $user['id'],
@@ -130,7 +172,7 @@ if ($method === 'POST' && $path === '/auth/login') {
         'exp'   => time() + $cfg['jwt_ttl'],
     ], $cfg['jwt_secret']);
 
-    Logger::info('auth.login', 'Client login', $email, ['ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
+    Logger::info('auth.login', 'Client login', $email, ['ip' => $ip]);
     respond(['token' => $token, 'role' => $user['role'], 'email' => $user['email']]);
 }
 
@@ -164,8 +206,9 @@ if ($method === 'PUT' && $path === '/auth/profile') {
     }
 
     if (!empty($body['password'])) {
-        if (strlen($body['password']) < 6) {
-            respond(['error' => 'Password min 6 chars'], 422);
+        $pwdErrors = PasswordPolicy::validate($body['password']);
+        if (!empty($pwdErrors)) {
+            respond(['error' => $pwdErrors[0], 'password_errors' => $pwdErrors], 422);
         }
         $sets[] = 'password = ?';
         $vals[] = password_hash($body['password'], PASSWORD_BCRYPT);
