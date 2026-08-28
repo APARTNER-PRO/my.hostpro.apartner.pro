@@ -737,10 +737,69 @@
   }
 
   /* ── Responsive ── */
+  .mobile-header { display: none; }
+  .sidebar-overlay { display: none; }
+
   @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main { padding: 24px 20px; }
+    .mobile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+    #mobile-menu-btn {
+      background: none; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center; padding: 4px;
+    }
+    
+    /* Mobile Sidebar */
+    .sidebar {
+      position: fixed; top: 0; left: -280px; width: 280px; height: 100vh;
+      z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sidebar.open { transform: translateX(280px); }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 95; backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.open { display: block; }
+    .sidebar-logo { display: none; }
+    
+    .main { padding: 20px 16px; overflow-x: hidden; }
     .sub-grid { grid-template-columns: 1fr; }
+    .page-title { font-size: 20px; }
+    
+    /* Layouts with sidebars (filters) */
+    div[style*="display:flex; gap:24px; align-items:flex-start;"] {
+      flex-direction: column; gap: 16px !important;
+    }
+    #inv-sidebar, #txn-sidebar {
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: row !important;
+      overflow-x: auto;
+      border: none !important;
+      padding: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    #inv-sidebar > div:first-child, #txn-sidebar > div:first-child { display: none; }
+    #inv-sidebar > div, #txn-sidebar > div {
+      padding: 10px 16px !important;
+      white-space: nowrap;
+      border-left: none !important;
+      border-radius: 8px;
+    }
+    
+    /* Tables */
+    .table-container, .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border-radius: 12px; }
+    table { min-width: 600px; }
+    
+    /* Login */
+    .login-card { padding: 32px 24px; }
+    .login-title { font-size: 24px; }
   }
 </style>
 </head>
@@ -777,8 +836,18 @@
 ═══════════════════════════════════════════ -->
 <div id="page-app" class="page">
 
+  <!-- Mobile Header -->
+  <header class="mobile-header">
+    <div class="sidebar-logo" style="padding:0; border:none; margin:0;">Billing<span>·</span>Portal</div>
+    <button id="mobile-menu-btn" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+  </header>
+  
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="app-sidebar">
     <div class="sidebar-logo">Billing<span>·</span>Portal</div>
 
     <!-- Client nav -->
@@ -1373,6 +1442,21 @@
 <div id="toast"></div>
 
 <script>
+function toggleSidebar() {
+  document.getElementById('app-sidebar').classList.toggle('open');
+  document.querySelector('.sidebar-overlay').classList.toggle('open');
+}
+
+// Close sidebar on mobile when navigating
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      document.getElementById('app-sidebar').classList.remove('open');
+      document.querySelector('.sidebar-overlay').classList.remove('open');
+    }
+  });
+});
+
 // ═══════════════════════════════════════════
 //  CONFIG
 //  Всі запити йдуть на /api — Vercel проксує
