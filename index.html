@@ -778,19 +778,26 @@
     }
     #inv-sidebar, #txn-sidebar {
       width: 100% !important;
-      display: flex !important;
-      flex-direction: row !important;
-      overflow-x: auto;
-      border: none !important;
-      padding: 0;
-      -webkit-overflow-scrolling: touch;
+      max-height: 46px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      border: 1px solid var(--border) !important;
+      border-radius: 12px;
     }
-    #inv-sidebar > div:first-child, #txn-sidebar > div:first-child { display: none; }
-    #inv-sidebar > div, #txn-sidebar > div {
-      padding: 10px 16px !important;
-      white-space: nowrap;
-      border-left: none !important;
-      border-radius: 8px;
+    #inv-sidebar.expanded, #txn-sidebar.expanded {
+      max-height: 600px;
+    }
+    #inv-sidebar > div:first-child, #txn-sidebar > div:first-child { 
+      display: flex; justify-content: space-between; align-items: center; 
+      cursor: pointer;
+    }
+    #inv-sidebar > div:first-child::after, #txn-sidebar > div:first-child::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.3s;
+    }
+    #inv-sidebar.expanded > div:first-child::after, #txn-sidebar.expanded > div:first-child::after {
+      transform: rotate(180deg);
     }
     
     /* Tables */
@@ -1052,7 +1059,7 @@
 
     <!-- Sidebar: status filters -->
     <div id="inv-sidebar" style="width:200px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
-      <div style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
+      <div onclick="this.parentNode.classList.toggle('expanded')" style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
 
       <div id="inv-filter-all" onclick="filterInvoices('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--accent);" data-i18n="status.all"></span>
@@ -1130,7 +1137,7 @@
 
     <!-- Sidebar: status filters -->
     <div id="txn-sidebar" style="width:200px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
-      <div style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
+      <div onclick="this.parentNode.classList.toggle('expanded')" style="padding:14px 20px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);">Фільтр</div>
 
       <div id="txn-filter-all" onclick="filterTransactions('all')" style="display:flex; justify-content:space-between; align-items:center; padding:13px 20px; cursor:pointer; border-left:3px solid var(--accent); background:rgba(79,142,247,.06); transition:all .15s;">
         <span style="font-size:13px; font-weight:600; color:var(--accent);" data-i18n="status.all"></span>
@@ -2696,6 +2703,9 @@ async function loadTransactions() {
 function filterTransactions(status) {
   _activeTxnFilter = status;
 
+  // Close accordion on mobile
+  document.getElementById('txn-sidebar').classList.remove('expanded');
+
   TXN_STATUSES.forEach(s => {
     const el = document.getElementById('txn-filter-' + s);
     if (!el) return;
@@ -2802,6 +2812,9 @@ async function loadInvoices() {
 
 function filterInvoices(status) {
   _activeInvoiceFilter = status;
+
+  // Close accordion on mobile
+  document.getElementById('inv-sidebar').classList.remove('expanded');
 
   INV_STATUSES.forEach(s => {
     const el = document.getElementById('inv-filter-' + s);
