@@ -966,7 +966,7 @@
       <div class="page-header">
         <div>
           <div class="page-title"><span data-i18n="page.logs_title">Журнал подій</span></div>
-          <div class="page-desc"><span data-i18n="nav.admin_logs">Логи</span> авторизацій, WHM, Paddle, вебхуків</div>
+          <div class="page-desc" data-i18n="page.logs_desc">Логи авторизацій, WHM, Paddle, вебхуків</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <select id="log-level-filter" class="field" style="margin:0;width:auto"
@@ -983,10 +983,10 @@
       <!-- Tabs -->
       <div style="display:flex;gap:2px;margin-bottom:24px;background:var(--surface);
         border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content">
-        <button class="log-tab active" id="tab-events" onclick="switchLogTab('events')">
+        <button class="log-tab active" id="tab-events" onclick="switchLogTab('events')" data-i18n="tab.events">
           📋 Події
         </button>
-        <button class="log-tab" id="tab-webhooks" onclick="switchLogTab('webhooks')">
+        <button class="log-tab" id="tab-webhooks" onclick="switchLogTab('webhooks')" data-i18n="tab.webhooks">
           🔗 Webhook
         </button>
       </div>
@@ -1854,7 +1854,7 @@ function renderEventLogs(logs) {
 }
 
 function renderWebhookLogs(logs) {
-  if (!logs.length) return `<div class="empty-state"><div class="empty-icon">🔗</div><p>Webhook подій немає</p></div>`;
+  if (!logs.length) return `<div class="empty-state"><div class="empty-icon">🔗</div><p>${i18n.t('empty.no_webhooks')}</p></div>`;
 
   const rows = logs.map(l => `<tr>
     <td class="td-date">${fmtDatetime(l.processed_at)}</td>
@@ -2644,6 +2644,10 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'empty.no_invoices': 'Рахунків не знайдено',
+      'empty.no_webhooks': 'Webhook подій немає',
+      'tab.events': '📋 Події',
+      'tab.webhooks': '🔗 Webhook',
       'state.loading_payment': 'Завантаження методів оплати...',
       'error.paddle_api': 'Paddle API помилка',
       'page.settings_title': 'Налаштування профілю',
@@ -2835,6 +2839,10 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'empty.no_invoices': 'No invoices found',
+      'empty.no_webhooks': 'No webhook events found',
+      'tab.events': '📋 Events',
+      'tab.webhooks': '🔗 Webhook',
       'state.loading_payment': 'Loading payment methods...',
       'error.paddle_api': 'Paddle API Error',
       'page.settings_title': 'Profile Settings',
@@ -3240,7 +3248,7 @@ async function loadAdminInvoices() {
   try {
     const data = await apiFetch('/admin/invoices');
     if (!data.invoices.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Рахунків не знайдено</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted)">${i18n.t('empty.no_invoices')}</td></tr>`;
       return;
     }
     tbody.innerHTML = data.invoices.map(i => `
