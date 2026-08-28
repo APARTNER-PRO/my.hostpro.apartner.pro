@@ -2154,10 +2154,10 @@ function renderTicketsTableClient(tickets) {
   const rows = tickets.map(t => {
     const statusClass = `status-${t.status}`;
     const statusLabel = {
-      open:    'Новий',
-      pending: 'Очікує відповіді',
-      replied: 'Відповідь надано',
-      closed:  'Закритий',
+      open:    i18n.t('status.open'),
+      pending: i18n.t('status.pending'),
+      replied: i18n.t('status.replied_short'),
+      closed:  i18n.t('status.closed_short'),
     }[t.status] || t.status;
 
     return `
@@ -2176,7 +2176,7 @@ function renderTicketsTableClient(tickets) {
       <table>
         <thead>
           <tr>
-            <th data-i18n="table.subject">Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th data-i18n="table.updated">Оновлено</th><th></th>
+            <th>${i18n.t('table.subject')}</th><th>${i18n.t('table.status')}</th><th>${i18n.t('table.created')}</th><th>${i18n.t('table.updated')}</th><th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -2344,7 +2344,7 @@ function renderTicketsTableAdmin(tickets) {
     return `
       <div class="empty-state">
         <div class="empty-icon">🎫</div>
-        <p>Запитів підтримки не знайдено</p>
+        <p>${i18n.t('empty.no_tickets')}</p>
       </div>
     `;
   }
@@ -2352,10 +2352,10 @@ function renderTicketsTableAdmin(tickets) {
   const rows = tickets.map(t => {
     const statusClass = `status-${t.status}`;
     const statusLabel = {
-      open:    'Open (Новий)',
-      pending: 'Pending (Клієнт)',
-      replied: 'Replied (Адмін)',
-      closed:  'Closed (Закритий)',
+      open:    i18n.t('status.open'),
+      pending: i18n.t('status.pending'),
+      replied: i18n.t('status.replied_short'),
+      closed:  i18n.t('status.closed_short'),
     }[t.status] || t.status;
 
     return `
@@ -2375,7 +2375,7 @@ function renderTicketsTableAdmin(tickets) {
       <table>
         <thead>
           <tr>
-            <th data-i18n="table.client">Клієнт</th><th data-i18n="table.subject">Тема</th><th data-i18n="table.status">Статус</th><th data-i18n="table.created">Створено</th><th data-i18n="table.updated">Оновлено</th><th></th>
+            <th>${i18n.t('table.client')}</th><th>${i18n.t('table.subject')}</th><th>${i18n.t('table.status')}</th><th>${i18n.t('table.created')}</th><th>${i18n.t('table.updated')}</th><th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
