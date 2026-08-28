@@ -1051,7 +1051,7 @@
   <div class="page-header">
     <div>
       <h2 class="page-title"><span data-i18n="nav.invoices">Мої рахунки</span></h2>
-      <p class="page-sub">Перегляд та оплата виставлених рахунків.</p>
+      <p class="page-sub" data-i18n="page.invoices_desc">Перегляд та оплата виставлених рахунків.</p>
     </div>
   </div>
 
@@ -2146,7 +2146,7 @@ function renderTicketsTableClient(tickets) {
     return `
       <div class="empty-state">
         <div class="empty-icon">🎫</div>
-        <p>У вас ще немає створених запитів підтримки</p>
+        <p>${i18n.t('empty.no_tickets')}</p>
       </div>
     `;
   }
@@ -2557,24 +2557,24 @@ async function loadSettings() {
   el.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 24px;">
       <div style="max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px;">
-        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;">Профіль користувача</h3>
+        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;" data-i18n="settings.profile_title">${i18n.t('settings.profile_title')}</h3>
         <div class="field">
-          <label data-i18n="label.name">Ім'я</label>
-          <input type="text" id="settings-name" placeholder="Ім'я">
+          <label data-i18n="label.name">${i18n.t('label.name')}</label>
+          <input type="text" id="settings-name" placeholder="${i18n.t('label.name')}">
         </div>
         <div class="field">
-          <label>Мова інтерфейсу / Language</label>
+          <label data-i18n="settings.lang_label">${i18n.t('settings.lang_label')}</label>
           <select id="settings-lang">
             <option value="uk">Українська</option>
             <option value="en">English</option>
           </select>
         </div>
         <div class="field">
-          <label>Новий пароль (залиште порожнім, щоб не змінювати)</label>
-          <input type="password" id="settings-password" placeholder="мінімум 6 символів">
+          <label data-i18n="label.pwd_optional">${i18n.t('label.pwd_optional')}</label>
+          <input type="password" id="settings-password" placeholder="${i18n.t('placeholder.pwd_min2')}">
         </div>
         <div class="error-msg" id="settings-error"></div>
-        <button class="btn btn-primary" onclick="saveSettings()">Зберегти налаштування</button>
+        <button class="btn btn-primary" onclick="saveSettings()" data-i18n="btn.save_settings">${i18n.t('btn.save_settings')}</button>
       </div>
       ${adminSettingsHtml}
     </div>
@@ -2641,6 +2641,15 @@ const i18n = {
   locale: localStorage.getItem('app_lang') || 'uk',
   locales: {
     uk: {
+      'page.invoices_desc': 'Перегляд та оплата виставлених рахунків.',
+      'settings.profile_title': 'Профіль користувача',
+      'settings.lang_label': 'Мова інтерфейсу / Language',
+      'btn.save_settings': 'Зберегти налаштування',
+      'empty.no_tickets': 'У вас ще немає створених запитів підтримки',
+      'alert.no_invoices': 'У вас ще немає жодного рахунку.',
+      'alert.all_paid': '✅ Всі рахунки оплачені.',
+      'empty.no': 'Немає',
+      'error.prefix': 'Помилка',
       'filter.unpaid_invoices': 'неоплачених',
       'filter.paid_invoices': 'оплачених',
       'filter.cancelled_invoices': 'відмінених',
@@ -2776,6 +2785,15 @@ const i18n = {
       'btn.cancel_pay': 'Скасувати платіж'
     },
     en: {
+      'page.invoices_desc': 'View and pay your issued invoices.',
+      'settings.profile_title': 'User Profile',
+      'settings.lang_label': 'Interface Language',
+      'btn.save_settings': 'Save Settings',
+      'empty.no_tickets': 'You have no support tickets yet',
+      'alert.no_invoices': 'You have no invoices yet.',
+      'alert.all_paid': '✅ All invoices are paid.',
+      'empty.no': 'No',
+      'error.prefix': 'Error',
       'filter.unpaid_invoices': 'unpaid invoices',
       'filter.paid_invoices': 'paid invoices',
       'filter.cancelled_invoices': 'cancelled invoices',
@@ -3055,12 +3073,12 @@ async function loadInvoices() {
     alertEl.style.display = 'none';
     const unpaidCount = (counts.unpaid || 0) + (counts.billed || 0) + (counts.past_due || 0);
     if (counts.all === 0) {
-      alertEl.innerHTML = 'У вас ще немає жодного рахунку.';
+      alertEl.innerHTML = i18n.t('alert.no_invoices');
       alertEl.style.background = 'var(--border)';
       alertEl.style.color = 'var(--text)';
       alertEl.style.display = 'block';
     } else if (unpaidCount === 0) {
-      alertEl.innerHTML = '✅ Всі рахунки оплачені.';
+      alertEl.innerHTML = i18n.t('alert.all_paid');
       alertEl.style.background = 'rgba(34,211,160,0.1)';
       alertEl.style.color = 'var(--green)';
       alertEl.style.display = 'block';
@@ -3068,7 +3086,7 @@ async function loadInvoices() {
 
     filterInvoices(_activeInvoiceFilter);
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red)">Помилка: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red)">${i18n.t('error.prefix')}: ${e.message}</td></tr>`;
   }
 }
 
@@ -3104,7 +3122,7 @@ function filterInvoices(status) {
       refunded: i18n.t('filter.refunded_invoices') || 'повернених', 
       all: i18n.t('filter.all_invoices') || 'рахунків' 
     };
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Немає ${labels[status] || status}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">${i18n.t('empty.no')} ${labels[status] || status}</td></tr>`;
     return;
   }
 
