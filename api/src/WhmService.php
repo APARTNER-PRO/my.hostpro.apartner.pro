@@ -156,6 +156,7 @@ class WhmService
             if (
                 str_contains($msg, 'already exists') ||
                 str_contains($msg, 'вже існує') ||
+                str_contains($msg, 'уже існує') ||
                 str_contains($msg, 'exists in')
             ) {
                 // Пробуємо отримати деталі через accountsummary (може не спрацювати)
