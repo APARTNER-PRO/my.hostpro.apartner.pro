@@ -68,7 +68,10 @@ class WhmService
     // ── Список усіх акаунтів (без фільтрів — отримуємо всі) ────────────────
     public function listAccounts(): array
     {
-        $res = $this->request('listaccts', []);  // без searchtype — повертає всі акаунти
+        // Не використовуйте searchtype=email з пустим search — це повертає 0 акаунтів!
+        // $res = $this->request('listaccts', ['searchtype' => 'email', 'search' => '']);
+        
+        $res = $this->request('listaccts', []);  
         return $res['acct'] ?? [];
     }
 
@@ -109,17 +112,14 @@ class WhmService
         ];
     }
 
-    // ── Авто-створення: якщо акаунту з таким email ще немає → створити ───────
-    // Повертає ['created'=>bool, 'existed'=>bool, 'account'=>array|null, 'error'=>string|null]
-    public function ensureAccount(string $email, string $plan): array
+    // ── Автоматизований пошук акаунту за email (із врахуванням всіх можливих варіантів) ──
+    public function findAccountForEmail(string $email): ?array
     {
         $cfg = require __DIR__ . '/../config/config.php';
 
         // 1️⃣ Перевіряємо за email
         $existing = $this->getAccountByEmail($email);
-        if ($existing) {
-            return ['created' => false, 'existed' => true, 'account' => $existing, 'error' => null];
-        }
+        if ($existing) return $existing;
 
         // Генеруємо username і домен з email
         $username = $this->usernameFromEmail($email);
@@ -133,16 +133,43 @@ class WhmService
             $domain   = 'bundes-mebli.com.ua';
         }
 
-        // 2️⃣ Перевіряємо за username (акаунт може бути зареєстрований з іншим email)
+        // 2️⃣ Перевіряємо за username (може не бути видно в listaccts, якщо інший реселер)
         $existingByUser = $this->getAccountByUsername($username);
-        if ($existingByUser) {
-            return ['created' => false, 'existed' => true, 'account' => $existingByUser, 'error' => null];
+        if ($existingByUser) return $existingByUser;
+
+        // 3️⃣ Перевіряємо через accountsummary (може не працювати для реселерів без root)
+        $existingSummary = $this->getAccountSummary($username);
+        if ($existingSummary) return $existingSummary;
+
+        // 4️⃣ Перевіряємо за доменом (listaccts)
+        $existingByDomain = $this->getAccountByDomain($domain);
+        if ($existingByDomain) return $existingByDomain;
+
+        \Logger::error('whm.find_account_failed', "Could not find account for email: $email, username: $username, domain: $domain");
+        return null;
+    }
+
+    // ── Авто-створення: якщо акаунту з таким email ще немає → створити ───────
+
+    // Повертає ['created'=>bool, 'existed'=>bool, 'account'=>array|null, 'error'=>string|null]
+    public function ensureAccount(string $email, string $plan): array
+    {
+        $cfg = require __DIR__ . '/../config/config.php';
+
+        $existing = $this->findAccountForEmail($email);
+        if ($existing) {
+            return ['created' => false, 'existed' => true, 'account' => $existing, 'error' => null];
         }
 
-        // 3️⃣ Перевіряємо за доменом (на випадок фіксованих доменів)
-        $existingByDomain = $this->getAccountByDomain($domain);
-        if ($existingByDomain) {
-            return ['created' => false, 'existed' => true, 'account' => $existingByDomain, 'error' => null];
+        // Генеруємо username і домен з email для створення
+        $username = $this->usernameFromEmail($email);
+        $domain   = $cfg['whm_default_domain_prefix']
+                        ? $username . '.' . $cfg['whm_default_domain_prefix']
+                        : $username . '.clients.example.com';
+
+        if ($username === 'viknaeur') {
+            $username = 'bundesmebli';
+            $domain   = 'bundes-mebli.com.ua';
         }
 
         // Нічого не знайшли — створюємо новий

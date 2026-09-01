@@ -1088,7 +1088,7 @@ if ($method === 'GET' && $path === '/billing/cpanel-sso') {
 
     try {
         $whm     = new WhmService();
-        $account = $whm->getAccountByEmail($email);
+        $account = $whm->findAccountForEmail($email);
 
         if (!$account) {
             respond(['error' => 'cPanel account not found for this email'], 404);
@@ -1126,7 +1126,7 @@ if ($method === 'GET' && preg_match('#^/admin/clients/(\d+)/cpanel-sso$#', $path
 
     try {
         $whm     = new WhmService();
-        $account = $whm->getAccountByEmail($user['email']);
+        $account = $whm->findAccountForEmail($user['email']);
 
         if (!$account) {
             respond(['error' => 'cPanel account not found for ' . $user['email']], 404);
