@@ -893,6 +893,9 @@
       <div class="nav-item" onclick="showView('admin-logs'); loadLogs()">
         <span class="nav-icon">📋</span> <span data-i18n="nav.admin_logs">Логи</span>
       </div>
+      <div class="nav-item" onclick="showView('admin-cache'); loadCacheInfo()">
+        <span class="nav-icon">🗑️</span> <span>Кеш</span>
+      </div>
       <div class="nav-item" onclick="showView('settings'); loadSettings()">
         <span class="nav-icon">⚙️</span> <span data-i18n="nav.settings">Налаштування</span>
       </div>
@@ -1245,6 +1248,21 @@
 
   <div id="settings-content">
     <!-- form will be injected by loadSettings() -->
+  </div>
+</div>
+
+<!-- адмін: кеш -->
+<div class="view" id="view-admin-cache">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🗑️ Кеш API</div>
+      <div class="page-desc">Управління файловим кешем білінгу</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="loadCacheInfo()">&#8635; Оновити</button>
+  </div>
+
+  <div id="cache-content">
+    <div class="loading-state"><div class="spinner"></div> Завантаження...</div>
   </div>
 </div>
 
@@ -1909,7 +1927,8 @@ function showView(name) {
       'admin-tickets':  2,
       'admin-invoices': 3,
       'admin-logs':     4,
-      'settings':       5,
+      'admin-cache':    5,
+      'settings':       6,
     };
     idx = adminMap[name];
   } else {
