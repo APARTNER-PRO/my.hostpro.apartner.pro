@@ -1904,22 +1904,25 @@ function showView(name) {
   let idx = 0;
   if (userRole === 'admin') {
     const adminMap = {
-      'admin-billing': 0,
-      'admin-clients': 1,
-      'admin-tickets': 2,
-      'admin-logs':    3,
-      'settings':      4
+      'admin-billing':  0,
+      'admin-clients':  1,
+      'admin-tickets':  2,
+      'admin-invoices': 3,
+      'admin-logs':     4,
+      'settings':       5,
     };
     idx = adminMap[name];
   } else {
     const clientMap = {
-      'billing':  0,
-      'tickets':  1,
-      'settings': 2
+      'billing':      0,
+      'tickets':      1,
+      'invoices':     2,
+      'transactions': 3,
+      'settings':     4,
     };
     idx = clientMap[name];
   }
-  if (items[idx]) items[idx].classList.add('active');
+  if (items[idx] !== undefined) items[idx].classList.add('active');
 }
 
 function setUser(email, role) {
