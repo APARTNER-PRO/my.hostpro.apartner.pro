@@ -92,6 +92,11 @@ class WhmService
             $domain   = 'bundes-mebli.com.ua';
         }
 
+        if ($username === 'aerostar' || $domain === 'aerostar.uaprogramist.com.ua') {
+            $username = 'aerostar';
+            $domain   = 'aerostar.uz';
+        }
+
         $res = $this->request('createacct', [
             'username'     => $username,
             'domain'       => $domain,
@@ -133,6 +138,11 @@ class WhmService
             $domain   = 'bundes-mebli.com.ua';
         }
 
+        if ($username === 'aerostar') {
+            $username = 'aerostar';
+            $domain   = 'aerostar.uz';
+        }
+
         // 2️⃣ Перевіряємо за username (може не бути видно в listaccts, якщо інший реселер)
         $existingByUser = $this->getAccountByUsername($username);
         if ($existingByUser) return $existingByUser;
@@ -170,6 +180,11 @@ class WhmService
         if ($username === 'viknaeur') {
             $username = 'bundesmebli';
             $domain   = 'bundes-mebli.com.ua';
+        }
+
+        if ($username === 'aerostar') {
+            $username = 'aerostar';
+            $domain   = 'aerostar.uz';
         }
 
         // Нічого не знайшли — створюємо новий
