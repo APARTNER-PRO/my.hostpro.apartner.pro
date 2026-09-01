@@ -240,6 +240,21 @@ if ($method === 'GET' && $path === '/billing') {
     $payload = AuthMiddleware::requireAuth();
     $email   = $payload['email'];
 
+    // ── Кеш (файловий, TTL 24 год) ───────────────────────────────────────────
+    $cacheDir  = __DIR__ . '/cache';
+    $cacheKey  = md5('billing:' . strtolower($email));
+    $cacheFile = $cacheDir . '/' . $cacheKey . '.json';
+    $cacheTtl  = 86400; // 24 години
+    $forceRefresh = !empty($_GET['refresh']);
+
+    if (!$forceRefresh && is_file($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTtl) {
+        // Повертаємо закешований результат
+        $cached = json_decode(file_get_contents($cacheFile), true);
+        if (is_array($cached)) {
+            respond($cached);
+        }
+    }
+
     $subs      = [];
     $paddleErr = null;
     try {
@@ -261,13 +276,22 @@ if ($method === 'GET' && $path === '/billing') {
         }
     }
 
-    respond([
+    $response = [
         'email'         => $email,
         'subscriptions' => $subs,
         'whm'           => $whmResult,
         'paddle_error'  => $paddleErr,
-    ]);
+    ];
+
+    // Зберігаємо в кеш тільки якщо Paddle відповів без помилок
+    if (!$paddleErr) {
+        if (!is_dir($cacheDir)) mkdir($cacheDir, 0755, true);
+        file_put_contents($cacheFile, json_encode($response, JSON_UNESCAPED_UNICODE));
+    }
+
+    respond($response);
 }
+
 
 // ── GET /admin/billing?email=... ── адмін: підписки + WHM будь-якого email ────
 if ($method === 'GET' && $path === '/admin/billing') {
