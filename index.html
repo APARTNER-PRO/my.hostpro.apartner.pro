@@ -1785,6 +1785,78 @@ function closeModal() {
   document.getElementById('modal-create').classList.remove('open');
 }
 
+// ═══════════════════════════════════════════
+//  CACHE
+// ═══════════════════════════════════════════
+async function loadCacheInfo() {
+  const el = document.getElementById('cache-content');
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> Завантаження...</div>`;
+  try {
+    const res = await apiFetch('/admin/cache');
+    
+    let html = `
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:24px; font-weight:800; margin-bottom:4px">${res.files_count}</div>
+            <div style="font-size:13px; color:var(--muted)">Кількість файлів кешу</div>
+          </div>
+          <div>
+            <div style="font-size:24px; font-weight:800; margin-bottom:4px">${res.total_size_kb} KB</div>
+            <div style="font-size:13px; color:var(--muted)">Загальний розмір</div>
+          </div>
+          <button class="btn btn-danger" onclick="clearCache()">Очистити весь кеш</button>
+        </div>
+      </div>
+    `;
+
+    if (res.files && res.files.length > 0) {
+      html += `
+        <table class="table" style="width:100%">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:12px">Файл (email hash)</th>
+              <th style="text-align:left; padding:12px">Розмір</th>
+              <th style="text-align:left; padding:12px">Змінено</th>
+              <th style="text-align:right; padding:12px">Дія</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      res.files.forEach(f => {
+        html += `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px; font-family:var(--mono)">${escHtml(f.name)}</td>
+            <td style="padding:12px">${f.size_kb} KB</td>
+            <td style="padding:12px; color:var(--muted)">${new Date(f.mtime * 1000).toLocaleString()}</td>
+            <td style="padding:12px; text-align:right">
+              <button class="btn btn-ghost btn-sm" onclick="clearCache('${f.name}')">Видалити</button>
+            </td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+    } else {
+      html += `<div class="empty-state">Кеш порожній.</div>`;
+    }
+    
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${escHtml(e.message)}</div>`;
+  }
+}
+
+async function clearCache(filename = '') {
+  if (!confirm(filename ? 'Видалити цей файл кешу?' : 'Видалити всі файли кешу?')) return;
+  try {
+    await apiFetch('/admin/cache/clear', 'POST', { filename });
+    toast('Кеш очищено', 'success');
+    loadCacheInfo();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
 async function createClient() {
   const name     = document.getElementById('new-name').value.trim();
   const email    = document.getElementById('new-email').value.trim();

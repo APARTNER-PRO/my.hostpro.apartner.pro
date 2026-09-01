@@ -1171,6 +1171,55 @@ if ($method === 'GET' && preg_match('#^/admin/clients/(\d+)/cpanel-sso$#', $path
     }
 }
 
+// ── GET /admin/cache ── отримати інфо про кеш ──────────────
+if ($method === 'GET' && $path === '/admin/cache') {
+    AuthMiddleware::requireAdmin();
+    $cacheDir = __DIR__ . '/cache';
+    $files = [];
+    $totalSize = 0;
+    
+    if (is_dir($cacheDir)) {
+        foreach (glob($cacheDir . '/*.json') as $file) {
+            $size = filesize($file);
+            $totalSize += $size;
+            $files[] = [
+                'name'    => basename($file),
+                'size_kb' => round($size / 1024, 2),
+                'mtime'   => filemtime($file)
+            ];
+        }
+    }
+    
+    usort($files, fn($a, $b) => $b['mtime'] <=> $a['mtime']);
+    
+    respond([
+        'files_count'   => count($files),
+        'total_size_kb' => round($totalSize / 1024, 2),
+        'files'         => $files
+    ]);
+}
+
+// ── POST /admin/cache/clear ── очистити кеш ──────────────
+if ($method === 'POST' && $path === '/admin/cache/clear') {
+    AuthMiddleware::requireAdmin();
+    $input = json_decode(file_get_contents('php://input'), true);
+    $filename = $input['filename'] ?? '';
+    $cacheDir = __DIR__ . '/cache';
+    
+    if ($filename) {
+        $file = $cacheDir . '/' . basename($filename);
+        if (is_file($file)) unlink($file);
+    } else {
+        if (is_dir($cacheDir)) {
+            foreach (glob($cacheDir . '/*.json') as $file) {
+                unlink($file);
+            }
+        }
+    }
+    
+    respond(['success' => true]);
+}
+
 // ── 404 ───────────────────────────────────────────────────────────────────────
 respond(['error' => 'Not found', 'path' => $path], 404);
 
