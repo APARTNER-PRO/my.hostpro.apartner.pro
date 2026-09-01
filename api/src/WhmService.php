@@ -106,10 +106,16 @@ class WhmService
             'pkgname'      => $plan,
         ]);
 
-        $result = $res['result'][0] ?? $res['result'] ?? [];
+        $result  = $res['result'][0] ?? $res['result'] ?? [];
+        $msg     = strtolower($result['statusmsg'] ?? ($res['metadata']['reason'] ?? ''));
+
+        // WHM може повертати status як різні типи, тому також перевіряємо вміст повідомлення
+        $isSuccess = (!empty($result['status']) && (int)$result['status'] === 1)
+                  || ((int)($res['metadata']['result'] ?? 0) === 1)
+                  || str_contains($msg, 'account creation ok');
 
         return [
-            'success'  => !empty($result['status']) && (int)$result['status'] === 1,
+            'success'  => $isSuccess,
             'username' => $username,
             'domain'   => $domain,
             'message'  => $result['statusmsg'] ?? ($res['metadata']['reason'] ?? 'Unknown'),
