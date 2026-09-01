@@ -311,12 +311,12 @@ if ($method === 'POST' && $path === '/admin/billing/provision') {
 
     // Валідуємо план — тільки відомі пакети
     $allowedPlans = [
-        'wedbkrdb_Starter',
-        'wedbkrdb_Personal',
-        'wedbkrdb_Business',
-        'wedbkrdb_Business-Special',
-        'wedbkrdb_Agency',
-        'wedbkrdb_Agency Pro',
+        'xhkazoyb_Starter',
+        'xhkazoyb_Personal',
+        'xhkazoyb_Business',
+        'xhkazoyb_Business-Special',
+        'xhkazoyb_Agency',
+        'xhkazoyb_Agency Pro',
     ];
     if (!in_array($plan, $allowedPlans, true)) {
         respond(['error' => 'Invalid plan: ' . $plan], 422);
@@ -1077,5 +1077,76 @@ if ($method === 'POST' && preg_match('#^/client/invoices/(\d+)/paddle-checkout$#
     }
 }
 
+// ── GET /billing/cpanel-sso ── одноразовий URL для автологіну в cPanel ────────
+if ($method === 'GET' && $path === '/billing/cpanel-sso') {
+    $payload = AuthMiddleware::requireAuth();
+    $email   = $payload['email'];
+
+    if (empty($cfg['whm_token'])) {
+        respond(['error' => 'WHM not configured'], 503);
+    }
+
+    try {
+        $whm     = new WhmService();
+        $account = $whm->getAccountByEmail($email);
+
+        if (!$account) {
+            respond(['error' => 'cPanel account not found for this email'], 404);
+        }
+
+        $cpanelUser = $account['user'] ?? $account['login'] ?? null;
+        if (!$cpanelUser) {
+            respond(['error' => 'Could not determine cPanel username'], 500);
+        }
+
+        $ssoUrl = $whm->createUserSession($cpanelUser);
+
+        Logger::info('cpanel.sso', 'cPanel SSO session created', $email, ['cpanel_user' => $cpanelUser]);
+
+        respond(['url' => $ssoUrl]);
+    } catch (\Throwable $e) {
+        Logger::error('cpanel.sso_error', $e->getMessage(), $email);
+        respond(['error' => $e->getMessage()], 500);
+    }
+}
+
+// ── GET /admin/clients/{id}/cpanel-sso ── адмін: SSO для будь-якого клієнта ──
+if ($method === 'GET' && preg_match('#^/admin/clients/(\d+)/cpanel-sso$#', $path, $m)) {
+    AuthMiddleware::requireAdmin();
+
+    $db   = Database::get();
+    $stmt = $db->prepare('SELECT email FROM users WHERE id = ?');
+    $stmt->execute([$m[1]]);
+    $user = $stmt->fetch();
+    if (!$user) respond(['error' => 'User not found'], 404);
+
+    if (empty($cfg['whm_token'])) {
+        respond(['error' => 'WHM not configured'], 503);
+    }
+
+    try {
+        $whm     = new WhmService();
+        $account = $whm->getAccountByEmail($user['email']);
+
+        if (!$account) {
+            respond(['error' => 'cPanel account not found for ' . $user['email']], 404);
+        }
+
+        $cpanelUser = $account['user'] ?? $account['login'] ?? null;
+        if (!$cpanelUser) {
+            respond(['error' => 'Could not determine cPanel username'], 500);
+        }
+
+        $ssoUrl = $whm->createUserSession($cpanelUser);
+
+        Logger::info('cpanel.sso_admin', 'Admin created cPanel SSO session', $user['email'], ['cpanel_user' => $cpanelUser]);
+
+        respond(['url' => $ssoUrl, 'cpanel_user' => $cpanelUser, 'email' => $user['email']]);
+    } catch (\Throwable $e) {
+        respond(['error' => $e->getMessage()], 500);
+    }
+}
+
 // ── 404 ───────────────────────────────────────────────────────────────────────
 respond(['error' => 'Not found', 'path' => $path], 404);
+

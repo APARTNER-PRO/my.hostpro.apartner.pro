@@ -75,9 +75,9 @@ return [
     // WHM / cPanel
     // =========================================================================
     'whm_host'                  => $_ENV['WHM_HOST']          ?? 'rocket-cms3.hostsila.org',
-    'whm_user'                  => $_ENV['WHM_USER']          ?? 'wedbkrdb',
+    'whm_user'                  => $_ENV['WHM_USER']          ?? 'xhkazoyb',
     'whm_token'                 => $_ENV['WHM_TOKEN']         ?? '',
-    'whm_plan'                  => $_ENV['WHM_PLAN']          ?? 'wedbkrdb_Personal',
+    'whm_plan'                  => $_ENV['WHM_PLAN']          ?? 'xhkazoyb_Personal',
     'whm_default_domain_prefix' => $_ENV['WHM_DOMAIN_PREFIX'] ?? '',
 
     // =========================================================================

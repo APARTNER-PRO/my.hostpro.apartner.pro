@@ -21,6 +21,8 @@ class WhmService
         foreach ($accounts as $acc) {
             if (strtolower($acc['email'] ?? '') === strtolower($email)) return true;
         }
+
+        // var_dump($accounts); // debug
         return false;
     }
 
@@ -34,10 +36,39 @@ class WhmService
         return null;
     }
 
-    // ── Список усіх акаунтів ──────────────────────────────────────────────────
+    // ── Отримати акаунт за cPanel username ─────────────────────────────────
+    public function getAccountByUsername(string $username): ?array
+    {
+        $accounts = $this->listAccounts();
+        foreach ($accounts as $acc) {
+            if (strtolower($acc['user'] ?? '') === strtolower($username)) return $acc;
+        }
+        return null;
+    }
+
+    // ── Отримати акаунт за доменом ────────────────────────────────────────
+    public function getAccountByDomain(string $domain): ?array
+    {
+        $accounts = $this->listAccounts();
+        foreach ($accounts as $acc) {
+            if (strtolower($acc['domain'] ?? '') === strtolower($domain)) return $acc;
+        }
+        return null;
+    }
+
+    // ── Отримати акаунт через accountsummary (працює для будь-якого акаунту, ────
+    // незалежно від того чиї він реселер) ──────────────────────────────
+    public function getAccountSummary(string $username): ?array
+    {
+        $res  = $this->request('accountsummary', ['user' => $username]);
+        $acct = $res['acct'][0] ?? null;
+        return $acct ?: null;
+    }
+
+    // ── Список усіх акаунтів (без фільтрів — отримуємо всі) ────────────────
     public function listAccounts(): array
     {
-        $res = $this->request('listaccts', ['searchtype' => 'email', 'search' => '']);
+        $res = $this->request('listaccts', []);  // без searchtype — повертає всі акаунти
         return $res['acct'] ?? [];
     }
 
@@ -51,6 +82,12 @@ class WhmService
     ): array {
         // username: макс 8 символів, тільки [a-z0-9_]
         $username = $this->sanitizeUsername($username);
+
+        // Спеціальний випадок: viknaeur → bundesmebli / bundes-mebli.com.ua
+        if ($username === 'viknaeur' || $domain === 'bundesmebli.uaprogramist.com.ua') {
+            $username = 'bundesmebli';
+            $domain   = 'bundes-mebli.com.ua';
+        }
 
         $res = $this->request('createacct', [
             'username'     => $username,
@@ -78,43 +115,86 @@ class WhmService
     {
         $cfg = require __DIR__ . '/../config/config.php';
 
-        // Перевіряємо чи вже є
+        // 1️⃣ Перевіряємо за email
         $existing = $this->getAccountByEmail($email);
         if ($existing) {
-            return [
-                'created'  => false,
-                'existed'  => true,
-                'account'  => $existing,
-                'error'    => null,
-            ];
+            return ['created' => false, 'existed' => true, 'account' => $existing, 'error' => null];
         }
 
-        // Генеруємо username з email
+        // Генеруємо username і домен з email
         $username = $this->usernameFromEmail($email);
         $domain   = $cfg['whm_default_domain_prefix']
                         ? $username . '.' . $cfg['whm_default_domain_prefix']
                         : $username . '.clients.example.com';
-        $password = $this->generatePassword();
 
-        $result = $this->createAccount($username, $domain, $password, $email, $plan);
+        // Спеціальний випадок: viknaeur → завжди bundes-mebli.com.ua
+        if ($username === 'viknaeur') {
+            $username = 'bundesmebli';
+            $domain   = 'bundes-mebli.com.ua';
+        }
+
+        // 2️⃣ Перевіряємо за username (акаунт може бути зареєстрований з іншим email)
+        $existingByUser = $this->getAccountByUsername($username);
+        if ($existingByUser) {
+            return ['created' => false, 'existed' => true, 'account' => $existingByUser, 'error' => null];
+        }
+
+        // 3️⃣ Перевіряємо за доменом (на випадок фіксованих доменів)
+        $existingByDomain = $this->getAccountByDomain($domain);
+        if ($existingByDomain) {
+            return ['created' => false, 'existed' => true, 'account' => $existingByDomain, 'error' => null];
+        }
+
+        // Нічого не знайшли — створюємо новий
+        $password = $this->generatePassword();
+        $result   = $this->createAccount($username, $domain, $password, $email, $plan);
 
         if (!$result['success']) {
-            return [
-                'created' => false,
-                'existed' => false,
-                'account' => null,
-                'error'   => $result['message'],
-            ];
+            // Якщо WHM каже "вже існує" — акаунт є, просто не наш реселер.
+            // Не намагаємось шукати — повертаємо existed=true з відомими даними.
+            $msg = strtolower($result['message']);
+            if (
+                str_contains($msg, 'already exists') ||
+                str_contains($msg, 'вже існує') ||
+                str_contains($msg, 'exists in')
+            ) {
+                // Пробуємо отримати деталі через accountsummary (може не спрацювати)
+                $account = $this->getAccountSummary($username) ?? [
+                    'user'   => $username,
+                    'domain' => $domain,
+                ];
+                return ['created' => false, 'existed' => true, 'account' => $account, 'error' => null];
+            }
+            return ['created' => false, 'existed' => false, 'account' => null, 'error' => $result['message']];
         }
+
 
         return [
             'created'  => true,
             'existed'  => false,
             'username' => $username,
             'domain'   => $domain,
-            'password' => $password, // повертаємо тільки при створенні
+            'password' => $password,
             'error'    => null,
         ];
+    }
+
+    // ── SSO: створити одноразову сесію для входу в cPanel без пароля ──────────
+    // Повертає URL для редиректу або кидає RuntimeException
+    public function createUserSession(string $cpanelUsername): string
+    {
+        $res = $this->request('create_user_session', [
+            'user'    => $cpanelUsername,
+            'service' => 'cpaneld',
+        ]);
+
+        $url = $res['data']['url'] ?? null;
+        if (!$url) {
+            $reason = $res['metadata']['reason'] ?? json_encode($res);
+            throw new \RuntimeException('WHM SSO failed: ' . $reason);
+        }
+
+        return $url;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
