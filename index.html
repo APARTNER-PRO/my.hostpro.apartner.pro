@@ -1973,7 +1973,7 @@ function renderWhmBlock(whm) {
           <span>${i18n.t('whm.domain')}: ${escHtml(whm.domain || '')} · ${i18n.t('whm.login')}: ${escHtml(whm.username || '')}</span>
         </div>
       </div>
-      <button class="btn btn-primary btn-sm" style="width:auto; padding:6px 12px; font-size:12px;" onclick="loginCpanelClient()">Увійти в cPanel</button>
+      <!-- <button class="btn btn-primary btn-sm" style="width:auto; padding:6px 12px; font-size:12px;" onclick="loginCpanelClient()">Увійти в cPanel</button> -->
     </div>`;
 
   if (whm.existed) {
@@ -1987,7 +1987,7 @@ function renderWhmBlock(whm) {
           <span>${escHtml(acc.domain || acc.login || i18n.t('whm.cpanel_found'))}</span>
         </div>
       </div>
-      <button class="btn btn-primary btn-sm" style="width:auto; padding:6px 12px; font-size:12px;" onclick="loginCpanelClient()">Увійти в cPanel</button>
+      <!-- <button class="btn btn-primary btn-sm" style="width:auto; padding:6px 12px; font-size:12px;" onclick="loginCpanelClient()">Увійти в cPanel</button> -->
     </div>`;
   }
   return '';
