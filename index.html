@@ -1965,27 +1965,55 @@ function renderWhmBlock(whm) {
     </div>`;
 
   if (whm.created) return `
-    <div class="whm-block created" style="margin-top:20px">
-      <span class="whm-icon">✅</span>
-      <div>
-        <strong>${i18n.t('whm.account_created')}</strong>
-        <span>${i18n.t('whm.domain')}: ${escHtml(whm.domain || '')} · ${i18n.t('whm.login')}: ${escHtml(whm.username || '')}</span>
+    <div class="whm-block created" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="whm-icon">✅</span>
+        <div>
+          <strong>${i18n.t('whm.account_created')}</strong>
+          <span>${i18n.t('whm.domain')}: ${escHtml(whm.domain || '')} · ${i18n.t('whm.login')}: ${escHtml(whm.username || '')}</span>
+        </div>
       </div>
+      <button class="btn btn-primary btn-sm" style="width:auto; padding:6px 12px; font-size:12px;" onclick="loginCpanelClient()">Увійти в cPanel</button>
     </div>`;
 
   if (whm.existed) {
     const acc = whm.account || {};
     return `
-    <div class="whm-block existed" style="margin-top:20px">
-      <span class="whm-icon">🖥️</span>
-      <div>
-        <strong>${i18n.t('whm.account_active')}</strong>
-        <span>${escHtml(acc.domain || acc.login || i18n.t('whm.cpanel_found'))}</span>
+    <div class="whm-block existed" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="whm-icon">🖥️</span>
+        <div>
+          <strong>${i18n.t('whm.account_active')}</strong>
+          <span>${escHtml(acc.domain || acc.login || i18n.t('whm.cpanel_found'))}</span>
+        </div>
       </div>
+      <button class="btn btn-primary btn-sm" style="width:auto; padding:6px 12px; font-size:12px;" onclick="loginCpanelClient()">Увійти в cPanel</button>
     </div>`;
   }
   return '';
 }
+
+async function loginCpanelClient() {
+  try {
+    const btn = event.currentTarget;
+    const oldText = btn.innerHTML;
+    btn.innerHTML = 'Завантаження...';
+    btn.disabled = true;
+    
+    const res = await apiFetch('/billing/cpanel-sso');
+    if (res.url) {
+      window.open(res.url, '_blank');
+    } else {
+      toast('Не вдалося отримати посилання', 'error');
+    }
+    
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
 
 function renderWhmAdminBlock(account, email) {
   const planPickerHtml = `
