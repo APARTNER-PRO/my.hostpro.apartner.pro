@@ -168,7 +168,7 @@ class WhmService
     // ── Авто-створення: якщо акаунту з таким email ще немає → створити ───────
 
     // Повертає ['created'=>bool, 'existed'=>bool, 'account'=>array|null, 'error'=>string|null]
-    public function ensureAccount(string $email, string $plan, ?string $domain = null): array
+    public function ensureAccount(string $email, string $plan, ?string $domain = null, ?string $password = null): array
     {
         $cfg = require __DIR__ . '/../config/config.php';
 
@@ -200,7 +200,7 @@ class WhmService
         }
 
         // Нічого не знайшли — створюємо новий
-        $password = $this->generatePassword();
+        $password = $password ?? $this->generatePassword();
         $result   = $this->createAccount($username, $domain, $password, $email, $plan);
 
         if (!$result['success']) {
