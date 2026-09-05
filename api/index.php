@@ -421,7 +421,7 @@ if ($method === 'DELETE' && preg_match('#^/admin/clients/(\d+)$#', $path, $m)) {
     respond(['success' => true]);
 }
 
-// ── PUT /admin/clients/{id} ── оновити ім'я / пароль ─────────────────────────
+// ── PUT /admin/clients/{id} ── оновити ім'я / пароль / email ──────────────────
 if ($method === 'PUT' && preg_match('#^/admin/clients/(\d+)$#', $path, $m)) {
     AuthMiddleware::requireAdmin();
     $db   = Database::get();
@@ -430,6 +430,21 @@ if ($method === 'PUT' && preg_match('#^/admin/clients/(\d+)$#', $path, $m)) {
 
     if (!empty($body['name']))     { $sets[] = 'name = ?';     $vals[] = $body['name']; }
     if (!empty($body['password'])) { $sets[] = 'password = ?'; $vals[] = password_hash($body['password'], PASSWORD_BCRYPT); }
+
+    if (isset($body['email']) && $body['email'] !== '') {
+        $newEmail = strtolower(trim($body['email']));
+        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            respond(['error' => 'Invalid email format'], 422);
+        }
+        // Перевіряємо, чи email вже зайнятий іншим акаунтом
+        $chk = $db->prepare('SELECT id FROM users WHERE email = ? AND id != ?');
+        $chk->execute([$newEmail, $m[1]]);
+        if ($chk->fetch()) {
+            respond(['error' => 'Email already in use'], 409);
+        }
+        $sets[] = 'email = ?';
+        $vals[] = $newEmail;
+    }
 
     if (!$sets) respond(['error' => 'Nothing to update'], 400);
 

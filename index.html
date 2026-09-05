@@ -1342,6 +1342,10 @@
       <input type="text" id="edit-name" placeholder="Ім'я клієнта" data-i18n-placeholder="placeholder.client_name">
     </div>
     <div class="field">
+      <label>Email (залиште порожнім, щоб не змінювати)</label>
+      <input type="email" id="edit-email" placeholder="новий@email.com">
+    </div>
+    <div class="field">
       <label data-i18n="label.pwd_optional">Пароль (залиште порожнім, щоб не змінювати)</label>
       <input type="password" id="edit-password" placeholder=" мінімум 6 символів" data-i18n-placeholder="placeholder.pwd_min2">
     </div>
@@ -2200,9 +2204,11 @@ function openProvisionModal(email) {
 // ═════════════════════════════════════════════
 function openEditClientModal(id, email, name) {
   document.getElementById('edit-name').value = name;
+  document.getElementById('edit-email').value = '';
   document.getElementById('edit-password').value = '';
   document.getElementById('edit-modal-error').classList.remove('show');
   document.getElementById('modal-edit-client').dataset.clientId = id;
+  document.getElementById('modal-edit-client').dataset.clientEmail = email;
   document.getElementById('modal-edit-client').classList.add('open');
 }
 
@@ -2213,14 +2219,25 @@ function closeEditModal() {
 async function updateClient() {
   const clientId   = document.getElementById('modal-edit-client').dataset.clientId;
   const name       = document.getElementById('edit-name').value.trim();
+  const email      = document.getElementById('edit-email').value.trim();
   const password   = document.getElementById('edit-password').value;
   const err        = document.getElementById('edit-modal-error');
 
   err.classList.remove('show');
-  if (!name && !password) { showErr(err, 'Заповніть хоча б одне поле'); return; }
+  if (!name && !email && !password) { showErr(err, 'Заповніть хоча б одне поле'); return; }
+
+  // Базова валідація email на фронті
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showErr(err, 'Невірний формат email'); return;
+  }
+
+  const payload = {};
+  if (name)     payload.name     = name;
+  if (email)    payload.email    = email;
+  if (password) payload.password = password;
 
   try {
-    const res = await apiFetch(`/admin/clients/${clientId}`, 'PUT', { name, password });
+    await apiFetch(`/admin/clients/${clientId}`, 'PUT', payload);
     closeEditModal();
     toast('Клієнта оновлено', 'success');
     loadAdminClients();
