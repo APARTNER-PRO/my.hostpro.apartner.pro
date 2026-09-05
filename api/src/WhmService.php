@@ -123,10 +123,19 @@ class WhmService
         ];
     }
 
-    // ── Автоматизований пошук акаунту за email (із врахуванням всіх можливих варіантів) ──
-    public function findAccountForEmail(string $email): ?array
+    // ── Автоматизований пошук акаунту за email і username ─────────────────────
+    public function findAccountForEmail(string $email, ?string $customUsername = null): ?array
     {
         $cfg = require __DIR__ . '/../config/config.php';
+
+        // 0️⃣ Якщо передано customUsername — шукаємо за ним перш за всіма
+        if ($customUsername) {
+            $byCustomUser = $this->getAccountByUsername($customUsername);
+            if ($byCustomUser) return $byCustomUser;
+
+            $bySummary = $this->getAccountSummary($customUsername);
+            if ($bySummary) return $bySummary;
+        }
 
         // 1️⃣ Перевіряємо за email
         $existing = $this->getAccountByEmail($email);
@@ -149,11 +158,11 @@ class WhmService
             $domain   = 'aerostar.uz';
         }
 
-        // 2️⃣ Перевіряємо за username (може не бути видно в listaccts, якщо інший реселер)
+        // 2️⃣ Перевіряємо за username (з email)
         $existingByUser = $this->getAccountByUsername($username);
         if ($existingByUser) return $existingByUser;
 
-        // 3️⃣ Перевіряємо через accountsummary (може не працювати для реселерів без root)
+        // 3️⃣ Перевіряємо через accountsummary
         $existingSummary = $this->getAccountSummary($username);
         if ($existingSummary) return $existingSummary;
 
@@ -172,7 +181,7 @@ class WhmService
     {
         $cfg = require __DIR__ . '/../config/config.php';
 
-        $existing = $this->findAccountForEmail($email);
+        $existing = $this->findAccountForEmail($email, $customUsername ?: null);
         if ($existing) {
             $docrootResult = null;
             if ($docroot) {
