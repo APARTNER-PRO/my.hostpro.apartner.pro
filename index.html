@@ -1350,10 +1350,6 @@
       <input type="text" id="new-domain" placeholder="example.com (залиште порожнім для авто-генерації)">
     </div>
     <div class="field">
-      <label>Логін cPanel (необов'язково)</label>
-      <input type="text" id="new-cpanel-login" placeholder="тільки малі літери та цифри" pattern="[a-z0-9]+">
-    </div>
-    <div class="field">
       <label data-i18n="label.password_req">Пароль до білінгу *</label>
       <input type="password" id="new-password" placeholder="мін. 6 символів" data-i18n-placeholder="placeholder.pwd_min">
     </div>
@@ -2214,7 +2210,6 @@ async function createClient() {
   const name     = document.getElementById('new-name').value.trim();
   const email    = document.getElementById('new-email').value.trim();
   const domain   = document.getElementById('new-domain').value.trim();
-  const cpLogin  = document.getElementById('new-cpanel-login').value.trim();
   const password = document.getElementById('new-password').value;
   const cpPass   = document.getElementById('new-cpanel-password').value;
   const plan     = selectedPlan;
@@ -2224,7 +2219,7 @@ async function createClient() {
   if (!email || !password) { showErr(err, 'Email та пароль обов\'язкові'); return; }
 
   try {
-    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, cpanel_login: cpLogin, cpanel_password: cpPass, plan, domain });
+    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, cpanel_password: cpPass, plan, domain });
     closeModal();
     const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
     let msg = `Акаунт ${email} створено`;
