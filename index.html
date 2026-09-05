@@ -481,6 +481,11 @@
     max-height: 90vh;
     overflow-y: auto;
   }
+  .modal-lg { max-width: 800px; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  @media (max-width: 700px) {
+    .modal-grid { grid-template-columns: 1fr; gap: 0; }
+  }
 
   .modal-title {
     font-size: 20px;
@@ -1335,43 +1340,52 @@
      MODAL: CREATE CLIENT
 ═══════════════════════════════════════════ -->
 <div class="modal-backdrop" id="modal-create">
-  <div class="modal">
+  <div class="modal modal-lg">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-title"><span data-i18n="modal.new_client">Новий клієнт</span></div>
 
-    <div class="field">
-      <label data-i18n="label.name">Ім'я</label>
-      <input type="text" id="new-name" placeholder="Іван Іваненко" data-i18n-placeholder="placeholder.name">
-    </div>
-    <div class="field">
-      <label>Email *</label>
-      <input type="email" id="new-email" placeholder="client@example.com">
-    </div>
-    <div class="field">
-      <label>Домен cPanel (необов'язково)</label>
-      <input type="text" id="new-domain" placeholder="example.com (залиште порожнім для авто-генерації)">
-    </div>
-    <div class="field">
-      <label>Ім'я користувача cPanel (необов'язково)</label>
-      <input type="text" id="new-cpanel-user" placeholder="залиште порожнім для авто-генерації">
-    </div>
-    <div class="field">
-      <label>Пароль cPanel (необов'язково)</label>
-      <input type="password" id="new-cpanel-pass" placeholder="залиште порожнім, щоб використати пароль білінгу">
-    </div>
-    <div class="field">
-      <label data-i18n="label.password_req">Пароль *</label>
-      <input type="password" id="new-password" placeholder="мін. 6 символів" data-i18n-placeholder="placeholder.pwd_min">
-    </div>
-    <div class="field">
-      <label data-i18n="label.whm_plan">WHM Пакет хостингу</label>
-      <div class="plan-picker" id="modal-plan-picker">
-        <!-- заповнюється через JS -->
+    <div class="modal-grid">
+      <!-- Ліва колонка: Основні дані -->
+      <div>
+        <div class="field">
+          <label data-i18n="label.name">Ім'я</label>
+          <input type="text" id="new-name" placeholder="Іван Іваненко" data-i18n-placeholder="placeholder.name">
+        </div>
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" id="new-email" placeholder="client@example.com">
+        </div>
+        <div class="field">
+          <label data-i18n="label.password_req">Пароль *</label>
+          <input type="password" id="new-password" placeholder="мін. 6 символів" data-i18n-placeholder="placeholder.pwd_min">
+        </div>
+        <div class="field">
+          <label data-i18n="label.whm_plan">WHM Пакет хостингу</label>
+          <div class="plan-picker" id="modal-plan-picker">
+            <!-- заповнюється через JS -->
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="field" style="flex-direction:row; align-items:center; gap:8px;">
-      <input type="checkbox" id="new-force-whm" style="width:auto;margin:0;">
-      <label for="new-force-whm" style="margin:0;font-size:13px;color:var(--muted);cursor:pointer;">Створити cPanel акаунт без перевірки оплати в Paddle</label>
+
+      <!-- Права колонка: Налаштування cPanel -->
+      <div>
+        <div class="field">
+          <label>Домен cPanel (необов'язково)</label>
+          <input type="text" id="new-domain" placeholder="example.com (залиште порожнім для авто-генерації)">
+        </div>
+        <div class="field">
+          <label>Ім'я користувача cPanel (необов'язково)</label>
+          <input type="text" id="new-cpanel-user" placeholder="залиште порожнім для авто-генерації">
+        </div>
+        <div class="field">
+          <label>Пароль cPanel (необов'язково)</label>
+          <input type="password" id="new-cpanel-pass" placeholder="залиште порожнім, щоб використати пароль білінгу">
+        </div>
+        <div class="field" style="display:flex; flex-direction:row; align-items:center; gap:8px;">
+          <input type="checkbox" id="new-force-whm" style="width:auto;margin:0;">
+          <label for="new-force-whm" style="margin:0;font-size:13px;color:var(--muted);cursor:pointer;line-height:1.2;">Створити cPanel акаунт без перевірки оплати в Paddle</label>
+        </div>
+      </div>
     </div>
 
     <div class="error-msg" id="modal-error"></div>
