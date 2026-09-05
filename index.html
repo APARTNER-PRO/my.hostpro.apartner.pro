@@ -1350,11 +1350,6 @@
       <input type="text" id="new-domain" placeholder="example.com (залиште порожнім для авто-генерації)">
     </div>
     <div class="field">
-      <label>Підкаталог document root (необов'язково)</label>
-      <input type="text" id="new-docroot" placeholder="public (залиште порожнім для public_html)" style="font-family:var(--mono)">
-      <small style="color:var(--muted);font-size:11px;display:block;margin-top:4px">Якщо вказати <code style="background:var(--bg);padding:2px 5px;border-radius:4px">public</code>, домен вказуватиме на <code style="background:var(--bg);padding:2px 5px;border-radius:4px">public_html/public</code></small>
-    </div>
-    <div class="field">
       <label data-i18n="label.password_req">Пароль *</label>
       <input type="password" id="new-password" placeholder="мін. 6 символів" data-i18n-placeholder="placeholder.pwd_min">
     </div>
@@ -2124,7 +2119,6 @@ function openCreateModal() {
   document.getElementById('new-name').value = '';
   document.getElementById('new-email').value = '';
   document.getElementById('new-domain').value = '';
-  document.getElementById('new-docroot').value = '';
   document.getElementById('new-password').value = '';
   document.getElementById('modal-error').classList.remove('show');
   selectedPlan = WHM_PLANS[1].id; // reset to Personal
@@ -2209,19 +2203,18 @@ async function clearCache(filename = '') {
 }
 
 async function createClient() {
-  const name           = document.getElementById('new-name').value.trim();
-  const email          = document.getElementById('new-email').value.trim();
-  const domain         = document.getElementById('new-domain').value.trim();
-  const docroot_subdir = document.getElementById('new-docroot').value.trim();
-  const password       = document.getElementById('new-password').value;
-  const plan           = selectedPlan;
-  const err            = document.getElementById('modal-error');
+  const name     = document.getElementById('new-name').value.trim();
+  const email    = document.getElementById('new-email').value.trim();
+  const domain   = document.getElementById('new-domain').value.trim();
+  const password = document.getElementById('new-password').value;
+  const plan     = selectedPlan;
+  const err      = document.getElementById('modal-error');
 
   err.classList.remove('show');
   if (!email || !password) { showErr(err, 'Email та пароль обов\'язкові'); return; }
 
   try {
-    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain, docroot_subdir });
+    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain });
     closeModal();
     const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
     let msg = `Акаунт ${email} створено`;
