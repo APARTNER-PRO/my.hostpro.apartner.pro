@@ -1381,6 +1381,11 @@
           <label>Пароль cPanel (необов'язково)</label>
           <input type="password" id="new-cpanel-pass" placeholder="залиште порожнім, щоб використати пароль білінгу">
         </div>
+        <div class="field">
+          <label>Коренева директорія домену (необов'язково)</label>
+          <input type="text" id="new-docroot" placeholder="public (напр. public_html/public)">
+          <small style="color:var(--muted);font-size:11px;margin-top:4px;display:block">Залиште порожнім для стандартного public_html</small>
+        </div>
         <div class="field" style="display:flex; flex-direction:row; align-items:center; gap:8px;">
           <input type="checkbox" id="new-force-whm" style="width:auto;margin:0;">
           <label for="new-force-whm" style="margin:0;font-size:13px;color:var(--muted);cursor:pointer;line-height:1.2;">Створити cPanel акаунт без перевірки оплати в Paddle</label>
@@ -2149,6 +2154,7 @@ function openCreateModal() {
   document.getElementById('new-domain').value = '';
   document.getElementById('new-cpanel-user').value = '';
   document.getElementById('new-cpanel-pass').value = '';
+  document.getElementById('new-docroot').value = '';
   document.getElementById('new-password').value = '';
   document.getElementById('new-force-whm').checked = false;
   document.getElementById('modal-error').classList.remove('show');
@@ -2239,6 +2245,7 @@ async function createClient() {
   const domain      = document.getElementById('new-domain').value.trim();
   const cpanel_user = document.getElementById('new-cpanel-user').value.trim();
   const cpanel_pass = document.getElementById('new-cpanel-pass').value;
+  const docroot     = document.getElementById('new-docroot').value.trim();
   const password    = document.getElementById('new-password').value;
   const force_whm   = document.getElementById('new-force-whm').checked;
   const plan        = selectedPlan;
@@ -2248,7 +2255,7 @@ async function createClient() {
   if (!email || !password) { showErr(err, 'Email та пароль обов\'язкові'); return; }
 
   try {
-    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain, cpanel_user, cpanel_pass, force_whm });
+    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain, cpanel_user, cpanel_pass, docroot, force_whm });
     closeModal();
     const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
     let msg = `Акаунт ${email} створено`;
