@@ -161,20 +161,26 @@ class WhmService
         $existingByDomain = $this->getAccountByDomain($domain);
         if ($existingByDomain) return $existingByDomain;
 
-        \Logger::error('whm.find_account_failed', "Could not find account for email: $email, username: $username, domain: $domain");
+        error_log("whm.find_account_failed: Could not find account for email: $email, username: $username, domain: $domain");
         return null;
     }
 
     // ── Авто-створення: якщо акаунту з таким email ще немає → створити ───────
 
     // Повертає ['created'=>bool, 'existed'=>bool, 'account'=>array|null, 'error'=>string|null]
-    public function ensureAccount(string $email, string $plan, ?string $domain = null, ?string $password = null, ?string $customUsername = null): array
+    public function ensureAccount(string $email, string $plan, ?string $domain = null, ?string $password = null, ?string $customUsername = null, ?string $docroot = null): array
     {
         $cfg = require __DIR__ . '/../config/config.php';
 
         $existing = $this->findAccountForEmail($email);
         if ($existing) {
-            return ['created' => false, 'existed' => true, 'account' => $existing, 'error' => null];
+            $docrootResult = null;
+            if ($docroot) {
+                $existingUser   = $existing['user']   ?? ($customUsername ?: $this->usernameFromEmail($email));
+                $existingDomain = $existing['domain'] ?? $domain ?? '';
+                $docrootResult  = $this->setDocumentRoot($existingUser, $existingDomain, $docroot);
+            }
+            return ['created' => false, 'existed' => true, 'account' => $existing, 'error' => null, 'docroot' => $docrootResult];
         }
 
         // Використовуємо вказане ім'я, або генеруємо з email
@@ -204,8 +210,6 @@ class WhmService
         $result   = $this->createAccount($username, $domain, $password, $email, $plan);
 
         if (!$result['success']) {
-            // Якщо WHM каже "вже існує" — акаунт є, просто не наш реселер.
-            // Не намагаємось шукати — повертаємо existed=true з відомими даними.
             $msg = strtolower($result['message']);
             if (
                 str_contains($msg, 'already exists') ||
@@ -213,16 +217,23 @@ class WhmService
                 str_contains($msg, 'уже існує') ||
                 str_contains($msg, 'exists in')
             ) {
-                // Пробуємо отримати деталі через accountsummary (може не спрацювати)
                 $account = $this->getAccountSummary($username) ?? [
                     'user'   => $username,
                     'domain' => $domain,
                 ];
-                return ['created' => false, 'existed' => true, 'account' => $account, 'error' => null];
+                $docrootResult = null;
+                if ($docroot) {
+                    $docrootResult = $this->setDocumentRoot($username, $domain, $docroot);
+                }
+                return ['created' => false, 'existed' => true, 'account' => $account, 'error' => null, 'docroot' => $docrootResult];
             }
-            return ['created' => false, 'existed' => false, 'account' => null, 'error' => $result['message']];
+            return ['created' => false, 'existed' => false, 'account' => null, 'error' => $result['message'], 'docroot' => null];
         }
 
+        $docrootResult = null;
+        if ($docroot) {
+            $docrootResult = $this->setDocumentRoot($username, $domain, $docroot);
+        }
 
         return [
             'created'  => true,
@@ -231,8 +242,55 @@ class WhmService
             'domain'   => $domain,
             'password' => $password,
             'error'    => null,
+            'docroot'  => $docrootResult,
         ];
     }
+
+    // ── Зміна document root основного домену cPanel акаунту ──────────────────────
+    // Створює підпапку і записує .htaccess redirect через cPanel API2 Fileman
+    public function setDocumentRoot(string $username, string $domain, string $docroot): array
+    {
+        // Витягуємо відносний шлях: 'public' або 'public_html/public' → 'public'
+        $subdirRelative = preg_replace('#.*/public_html/?#', '', trim($docroot, '/'));
+        if ($subdirRelative === '' || $subdirRelative === 'public_html') {
+            return ['success' => false, 'message' => 'Invalid docroot specified'];
+        }
+
+        // 1. Створюємо папку public_html/{subdir} через cPanel API2 Fileman::mkdir
+        $mkdirResult = $this->requestCpanelUapi($username, 'Fileman', 'mkdir', [
+            'path'        => 'public_html',
+            'name'        => $subdirRelative,
+            'permissions' => '0755',
+        ]);
+
+        // 2. Записуємо .htaccess через cPanel API2 Fileman::savefile
+        $htaccessContent = "Options -Indexes\n" .
+            "RewriteEngine On\n" .
+            "RewriteBase /\n" .
+            "RewriteCond %{REQUEST_URI} !^/{$subdirRelative}/\n" .
+            "RewriteCond %{REQUEST_FILENAME} !-f\n" .
+            "RewriteRule ^(.*)$ /{$subdirRelative}/\$1 [L,QSA]\n";
+
+        $uploadResult = $this->requestCpanelUapi($username, 'Fileman', 'savefile', [
+            'dir'      => '/public_html',
+            'filename' => '.htaccess',
+            'content'  => $htaccessContent,
+        ]);
+
+        $hasError = !empty($uploadResult['cpanelresult']['error'])
+                 || empty($uploadResult['cpanelresult']['data']);
+
+        return [
+            'success'   => !$hasError,
+            'subdir'    => $subdirRelative,
+            'message'   => !$hasError
+                ? "Folder '{$subdirRelative}' created, .htaccess redirect set in public_html"
+                : ('Failed: ' . ($uploadResult['cpanelresult']['error'] ?? 'unknown')),
+            'mkdirRaw'  => $mkdirResult,
+            'raw'       => $uploadResult,
+        ];
+    }
+
 
     // ── Змінити головний домен cPanel акаунту ────────────────────────────────
     // WHM API: modifyacct  — змінює domain (primary domain) для існуючого акаунту
@@ -352,7 +410,7 @@ class WhmService
     }
 
     // ── HTTP до WHM JSON API ───────────────────────────────────────────────────
-    private function request(string $function, array $params = []): array
+    public function request(string $function, array $params = []): array
     {
         $url = sprintf('https://%s:2087/json-api/%s?api.version=1&%s',
             $this->host,
@@ -375,6 +433,42 @@ class WhmService
         curl_close($ch);
 
         if ($err) throw new \RuntimeException('WHM curl error: ' . $err);
+
+        $data = json_decode($raw, true);
+        return is_array($data) ? $data : [];
+    }
+
+    // ── HTTP до cPanel UAPI через WHM (Port 2087, json-api/cpanel) ────────────
+    // Дозволяє виконувати UAPI функції від імені конкретного cPanel юзера
+    public function requestCpanelUapi(string $cpanelUser, string $module, string $function, array $params = []): array
+    {
+        $query = array_merge([
+            'cpanel_jsonapi_user'       => $cpanelUser,
+            'cpanel_jsonapi_apiversion' => '2',
+            'cpanel_jsonapi_module'     => $module,
+            'cpanel_jsonapi_func'       => $function,
+        ], $params);
+
+        $url = sprintf('https://%s:2087/json-api/cpanel?%s',
+            $this->host,
+            http_build_query($query)
+        );
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: whm ' . $this->user . ':' . $this->token,
+            ],
+        ]);
+
+        $raw = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($err) throw new \RuntimeException('WHM cPanel UAPI curl error: ' . $err);
 
         $data = json_decode($raw, true);
         return is_array($data) ? $data : [];
