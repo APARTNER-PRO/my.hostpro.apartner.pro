@@ -371,11 +371,6 @@ if ($method === 'POST' && $path === '/admin/clients') {
 
     $email    = strtolower(trim($body['email']    ?? ''));
     $password = trim($body['password'] ?? '');
-    $cpPass   = trim($body['cpanel_password'] ?? '');
-    if ($cpPass === '') $cpPass = $password;
-
-    $cpLogin  = trim($body['cpanel_login'] ?? '');
-
     $name     = trim($body['name']     ?? '');
     $plan     = trim($body['plan']     ?? $cfg['whm_plan']);
     $domain   = trim($body['domain']   ?? '');
@@ -394,16 +389,25 @@ if ($method === 'POST' && $path === '/admin/clients') {
     $stmt->execute([$email, $hash, $name, 'client']);
     $newId = $db->lastInsertId();
 
-    // Перевіряємо Paddle → якщо є active підписка, провізіонуємо WHM з обраним планом
+    $forceWhm = !empty($body['force_whm']);
+
+    // Провізіонуємо WHM
     $whmResult = null;
     if (!empty($cfg['whm_token'])) {
         try {
-            $paddle    = new PaddleService();
-            $subs      = $paddle->getSubscriptionsByEmail($email);
-            $hasActive = !empty(array_filter($subs, fn($s) => in_array($s['status'], ['active', 'trialing'])));
+            $hasActive = false;
+            
+            if ($forceWhm) {
+                $hasActive = true;
+            } else {
+                $paddle    = new PaddleService();
+                $subs      = $paddle->getSubscriptionsByEmail($email);
+                $hasActive = !empty(array_filter($subs, fn($s) => in_array($s['status'], ['active', 'trialing'])));
+            }
+
             if ($hasActive) {
                 $whm       = new WhmService();
-                $whmResult = $whm->ensureAccount($email, $plan, $domain ?: null, $cpPass, $cpLogin);
+                $whmResult = $whm->ensureAccount($email, $plan, $domain ?: null, $password);
             }
         } catch (\Throwable $e) {
             $whmResult = ['error' => $e->getMessage()];

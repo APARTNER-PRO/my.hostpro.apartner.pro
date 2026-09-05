@@ -1359,6 +1359,10 @@
         <!-- заповнюється через JS -->
       </div>
     </div>
+    <div class="field" style="flex-direction:row; align-items:center; gap:8px;">
+      <input type="checkbox" id="new-force-whm" style="width:auto;margin:0;">
+      <label for="new-force-whm" style="margin:0;font-size:13px;color:var(--muted);cursor:pointer;">Створити cPanel акаунт без перевірки оплати в Paddle</label>
+    </div>
 
     <div class="error-msg" id="modal-error"></div>
 
@@ -2203,24 +2207,27 @@ async function clearCache(filename = '') {
 }
 
 async function createClient() {
-  const name     = document.getElementById('new-name').value.trim();
-  const email    = document.getElementById('new-email').value.trim();
-  const domain   = document.getElementById('new-domain').value.trim();
-  const password = document.getElementById('new-password').value;
-  const plan     = selectedPlan;
-  const err      = document.getElementById('modal-error');
+  const name      = document.getElementById('new-name').value.trim();
+  const email     = document.getElementById('new-email').value.trim();
+  const domain    = document.getElementById('new-domain').value.trim();
+  const password  = document.getElementById('new-password').value;
+  const force_whm = document.getElementById('new-force-whm').checked;
+  const plan      = selectedPlan;
+  const err       = document.getElementById('modal-error');
 
   err.classList.remove('show');
   if (!email || !password) { showErr(err, 'Email та пароль обов\'язкові'); return; }
 
   try {
-    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain });
+    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain, force_whm });
     closeModal();
     const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
     let msg = `Акаунт ${email} створено`;
     if (res.whm?.created)  msg += ` · WHM: ${res.whm.username} (${planLabel})`;
-    if (res.whm?.existed)  msg += ` · WHM акаунт вже є`;
-    toast(msg, 'success');
+    else if (res.whm?.existed)  msg += ` · WHM акаунт вже є`;
+    else if (res.whm?.error)    msg += ` · ⚠️ WHM Помилка: ${res.whm.error}`;
+    
+    toast(msg, res.whm?.error ? 'warning' : 'success');
     loadAdminClients();
   } catch (e) {
     showErr(err, e.message);
