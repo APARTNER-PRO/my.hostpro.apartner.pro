@@ -168,7 +168,7 @@ class WhmService
     // ── Авто-створення: якщо акаунту з таким email ще немає → створити ───────
 
     // Повертає ['created'=>bool, 'existed'=>bool, 'account'=>array|null, 'error'=>string|null]
-    public function ensureAccount(string $email, string $plan, ?string $domain = null, ?string $password = null): array
+    public function ensureAccount(string $email, string $plan, ?string $domain = null, ?string $password = null, ?string $customUsername = null): array
     {
         $cfg = require __DIR__ . '/../config/config.php';
 
@@ -177,8 +177,13 @@ class WhmService
             return ['created' => false, 'existed' => true, 'account' => $existing, 'error' => null];
         }
 
-        // Генеруємо username з email
-        $username = $this->usernameFromEmail($email);
+        // Генеруємо username з email або використовуємо переданий
+        if ($customUsername !== null && trim($customUsername) !== '') {
+            $username = strtolower(preg_replace('/[^a-z0-9]/', '', $customUsername));
+            if (strlen($username) > 16) $username = substr($username, 0, 16);
+        } else {
+            $username = $this->usernameFromEmail($email);
+        }
         
         // Визначаємо домен: або переданий, або генеруємо
         if ($domain === null || trim($domain) === '') {

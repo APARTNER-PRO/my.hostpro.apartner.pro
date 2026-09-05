@@ -374,6 +374,8 @@ if ($method === 'POST' && $path === '/admin/clients') {
     $cpPass   = trim($body['cpanel_password'] ?? '');
     if ($cpPass === '') $cpPass = $password;
 
+    $cpLogin  = trim($body['cpanel_login'] ?? '');
+
     $name     = trim($body['name']     ?? '');
     $plan     = trim($body['plan']     ?? $cfg['whm_plan']);
     $domain   = trim($body['domain']   ?? '');
@@ -401,7 +403,7 @@ if ($method === 'POST' && $path === '/admin/clients') {
             $hasActive = !empty(array_filter($subs, fn($s) => in_array($s['status'], ['active', 'trialing'])));
             if ($hasActive) {
                 $whm       = new WhmService();
-                $whmResult = $whm->ensureAccount($email, $plan, $domain ?: null, $cpPass);
+                $whmResult = $whm->ensureAccount($email, $plan, $domain ?: null, $cpPass, $cpLogin);
             }
         } catch (\Throwable $e) {
             $whmResult = ['error' => $e->getMessage()];
