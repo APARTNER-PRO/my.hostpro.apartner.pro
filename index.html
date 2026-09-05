@@ -4396,8 +4396,16 @@ async function submitChangePlan() {
 //  MODAL — Admin Notes
 // ═════════════════════════════════════════════
 function openNotesModal(clientId) {
-  const client = window.adminClients?.find(c => c.id === clientId);
-  if (!client) return;
+  clientId = Number(clientId);
+  const client = (window.adminClients || []).find(c => Number(c.id) === clientId);
+  if (!client) {
+    // Fallback: open modal even without cached data
+    document.getElementById('edit-notes-text').value = '';
+    document.getElementById('notes-modal-error').classList.remove('show');
+    document.getElementById('modal-admin-notes').dataset.clientId = clientId;
+    document.getElementById('modal-admin-notes').classList.add('open');
+    return;
+  }
   document.getElementById('edit-notes-text').value = client.admin_notes || '';
   document.getElementById('notes-modal-error').classList.remove('show');
   document.getElementById('modal-admin-notes').dataset.clientId = clientId;
