@@ -1350,12 +1350,8 @@
       <input type="text" id="new-domain" placeholder="example.com (залиште порожнім для авто-генерації)">
     </div>
     <div class="field">
-      <label data-i18n="label.password_req">Пароль до білінгу *</label>
+      <label data-i18n="label.password_req">Пароль *</label>
       <input type="password" id="new-password" placeholder="мін. 6 символів" data-i18n-placeholder="placeholder.pwd_min">
-    </div>
-    <div class="field">
-      <label>Пароль до cPanel (необов'язково)</label>
-      <input type="password" id="new-cpanel-password" placeholder="Якщо порожньо — буде як до білінгу">
     </div>
     <div class="field">
       <label data-i18n="label.whm_plan">WHM Пакет хостингу</label>
@@ -2211,7 +2207,6 @@ async function createClient() {
   const email    = document.getElementById('new-email').value.trim();
   const domain   = document.getElementById('new-domain').value.trim();
   const password = document.getElementById('new-password').value;
-  const cpPass   = document.getElementById('new-cpanel-password').value;
   const plan     = selectedPlan;
   const err      = document.getElementById('modal-error');
 
@@ -2219,7 +2214,7 @@ async function createClient() {
   if (!email || !password) { showErr(err, 'Email та пароль обов\'язкові'); return; }
 
   try {
-    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, cpanel_password: cpPass, plan, domain });
+    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain });
     closeModal();
     const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
     let msg = `Акаунт ${email} створено`;
