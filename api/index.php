@@ -389,7 +389,12 @@ if ($method === 'POST' && $path === '/admin/clients') {
     $stmt->execute([$email, $hash, $name, 'client']);
     $newId = $db->lastInsertId();
 
-    $forceWhm = !empty($body['force_whm']);
+    $forceWhm    = !empty($body['force_whm']);
+    $cpanelUser  = trim($body['cpanel_user'] ?? '');
+    $cpanelPass  = trim($body['cpanel_pass'] ?? '');
+
+    // Якщо пароль cPanel не вказано, використовуємо той же пароль, що й для білінгу
+    $whmPassword = $cpanelPass !== '' ? $cpanelPass : $password;
 
     // Провізіонуємо WHM
     $whmResult = null;
@@ -407,7 +412,7 @@ if ($method === 'POST' && $path === '/admin/clients') {
 
             if ($hasActive) {
                 $whm       = new WhmService();
-                $whmResult = $whm->ensureAccount($email, $plan, $domain ?: null, $password);
+                $whmResult = $whm->ensureAccount($email, $plan, $domain ?: null, $whmPassword, $cpanelUser ?: null);
             }
         } catch (\Throwable $e) {
             $whmResult = ['error' => $e->getMessage()];
