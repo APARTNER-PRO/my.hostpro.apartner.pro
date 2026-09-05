@@ -878,11 +878,17 @@
 
     <!-- Admin nav -->
     <div id="nav-admin" style="display:none">
-      <div class="nav-item active" onclick="showView('admin-billing')">
+      <div class="nav-item active" onclick="showView('admin-dashboard'); loadAdminDashboard()">
+        <span class="nav-icon">📊</span> <span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="showView('admin-billing')">
         <span class="nav-icon">🔍</span> <span data-i18n="nav.admin_billing">Перевірка білінгу</span>
       </div>
-      <div class="nav-item" onclick="showView('admin-clients')">
+      <div class="nav-item" onclick="showView('admin-clients'); loadAdminClients()">
         <span class="nav-icon">👥</span> <span data-i18n="nav.admin_clients">Клієнти</span>
+      </div>
+      <div class="nav-item" onclick="showView('admin-whm'); loadWhmStatus()">
+        <span class="nav-icon">🖥️</span> <span>WHM Status</span>
       </div>
       <div class="nav-item" onclick="showView('admin-tickets'); loadAdminTickets()">
         <span class="nav-icon">🎫</span> <span data-i18n="nav.admin_tickets">Тікети підтримки</span>
@@ -912,6 +918,20 @@
 
   <!-- Main content -->
   <main class="main">
+
+    <!-- ── VIEW: ADMIN DASHBOARD ── -->
+    <div class="view" id="view-admin-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📊 Dashboard</div>
+          <div class="page-desc">Загальна статистика порталу</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadAdminDashboard()">&#8635; Оновити</button>
+      </div>
+      <div id="dashboard-content">
+        <div class="loading-state"><div class="spinner"></div> Завантаження…</div>
+      </div>
+    </div>
 
     <!-- ── VIEW: CLIENT BILLING ── -->
     <div class="view active" id="view-billing">
@@ -945,6 +965,20 @@
       </div>
 
       <div id="admin-billing-content"></div>
+    </div>
+
+    <!-- ── VIEW: ADMIN WHM STATUS ── -->
+    <div class="view" id="view-admin-whm">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🖥 WHM Status</div>
+          <div class="page-desc">Привілеї реселера, пакети та стан підключення до WHM</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadWhmStatus()">↻ Перевірити</button>
+      </div>
+      <div id="whm-status-content">
+        <div class="loading-state"><div class="spinner"></div> Перевірка WHM…</div>
+      </div>
     </div>
 
     <!-- ── VIEW: ADMIN CLIENTS ── -->
@@ -1359,6 +1393,36 @@
   </div>
 </div>
 
+<!-- Modal: Change Plan -->
+<div class="modal-backdrop" id="modal-change-plan">
+  <div class="modal">
+    <button class="modal-close" onclick="closeChangePlanModal()">✕</button>
+    <div class="modal-title">🎯 Змінити WHM пакет (план)</div>
+
+    <div class="field">
+      <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Email клієнта</label>
+      <div id="cp-client-email" style="font-family:var(--mono);font-size:13px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);"></div>
+    </div>
+
+    <div class="field">
+      <label>cPanel username (залиште порожнім для автопошуку)</label>
+      <input type="text" id="cp-cpanel-user" placeholder="наприклад: marysali" style="font-family:var(--mono);">
+    </div>
+
+    <div class="field">
+      <label>Новий пакет хостингу *</label>
+      <div class="plan-picker" id="cp-plan-picker"></div>
+    </div>
+
+    <div class="error-msg" id="cp-modal-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeChangePlanModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="submitChangePlan()">Зберегти зміни</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Change Primary cPanel Domain -->
 <div class="modal-backdrop" id="modal-change-domain">
   <div class="modal" style="max-width:500px">
@@ -1551,7 +1615,8 @@ let userEmail = null;
     setUser(me.email, me.role);
     showPage('app');
     if (userRole === 'admin') {
-      loadAdminClients();
+      showView('admin-dashboard');
+      loadDashboard();
     } else {
       loadBilling();
     }
@@ -1618,8 +1683,8 @@ async function doLogin() {
     setUser(data.email, data.role);
     showPage('app');
     if (userRole === 'admin') {
-      loadAdminClients();
-      if (name === 'admin-logs') loadLogs();
+      showView('admin-dashboard');
+      loadDashboard();
     }
     else loadBilling();
   } catch (e) {
@@ -1782,6 +1847,9 @@ function renderClientsTable(clients) {
         <button class="btn btn-ghost btn-sm" onclick="lookupClient('${escHtml(c.email)}')">Підписки</button>
         <button class="btn btn-ghost btn-sm" onclick="openProvisionModal('${escHtml(c.email)}')">🖥 WHM</button>
         <button class="btn btn-ghost btn-sm" title="Змінити головний домен cPanel" onclick="openChangeDomainModal(${c.id}, '${escHtml(c.email)}')">🌐</button>
+        <button class="btn btn-ghost btn-sm" title="Змінити план WHM" onclick="openChangePlanModal(${c.id}, '${escHtml(c.email)}')">📦</button>
+        <button class="btn btn-ghost btn-sm" title="Suspend cPanel" onclick="openSuspendModal(${c.id}, '${escHtml(c.email)}', false)">⏸</button>
+        <button class="btn btn-ghost btn-sm" title="Unsuspend cPanel" onclick="openSuspendModal(${c.id}, '${escHtml(c.email)}', true)">▶</button>
         <button class="btn btn-ghost btn-sm" onclick="openEditClientModal(${c.id}, '${escHtml(c.email)}', '${escHtml(c.name || '')}')">⚙️</button>
         <button class="btn btn-danger btn-sm" onclick="deleteClient(${c.id}, '${escHtml(c.email)}')">✕</button>
       </td>
@@ -1801,6 +1869,205 @@ function lookupClient(email) {
   showView('admin-billing');
   document.getElementById('admin-lookup-email').value = email;
   adminLookup();
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — Dashboard
+// ═══════════════════════════════════════════
+async function loadAdminDashboard() {
+  const el = document.getElementById('dashboard-content');
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> Завантаження…</div>`;
+  try {
+    const d = await apiFetch('/admin/dashboard');
+    const cards = [
+      { icon: '👥', label: 'Клієнти (всього)', value: d.clients_total, sub: `+${d.clients_new_7d} за 7 днів`, color: 'var(--accent)' },
+      { icon: '🎫', label: 'Тікети (open/pending)', value: d.tickets_open, sub: 'потребують уваги', color: d.tickets_open > 0 ? 'var(--yellow)' : 'var(--green)' },
+      { icon: '🧾', label: 'Несплачені рахунки', value: d.invoices_unpaid, sub: `${d.invoices_unpaid_amount} EUR`, color: d.invoices_unpaid > 0 ? 'var(--red)' : 'var(--green)' },
+      { icon: '🖥️', label: 'WHM Акаунти', value: d.whm_accounts, sub: 'акаунтів у WHM', color: 'var(--accent2)' },
+    ];
+
+    const cardsHtml = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px">
+      ${cards.map(c => `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden">
+          <div style="font-size:28px;margin-bottom:8px">${c.icon}</div>
+          <div style="font-size:32px;font-weight:800;color:${c.color};margin-bottom:4px">${c.value}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">${c.label}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${c.sub}</div>
+        </div>`).join('')}
+    </div>`;
+
+    const eventsHtml = d.recent_events && d.recent_events.length ? `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px">🗓️ Останні події</div>
+        <div class="table-wrapper">
+          <table><thead><tr><th>Час</th><th>Рівень</th><th>Подія</th><th>Email</th><th>Повідомлення</th></tr></thead>
+          <tbody>${d.recent_events.map(e => `
+            <tr>
+              <td class="td-date">${fmtDatetime(e.created_at)}</td>
+              <td><span class="log-level-${e.level}" style="font-weight:700;font-size:11px;text-transform:uppercase">${e.level}</span></td>
+              <td style="font-family:var(--mono);font-size:12px;color:var(--accent)">${escHtml(e.event)}</td>
+              <td class="td-email" style="font-size:12px">${escHtml(e.email || '—')}</td>
+              <td style="font-size:12px">${escHtml(e.message)}</td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>` : `<div class="empty-state"><div class="empty-icon">🗓️</div><p>Подій ще немає</p></div>`;
+
+    el.innerHTML = cardsHtml + eventsHtml;
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${escHtml(e.message)}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — WHM Status
+// ═══════════════════════════════════════════
+async function loadWhmStatus() {
+  const el = document.getElementById('whm-status-content');
+  el.innerHTML = `<div class="loading-state"><div class="spinner"></div> Запит до WHM…</div>`;
+  try {
+    const d = await apiFetch('/admin/whm/status');
+
+    const statusColor = d.online ? 'var(--green)' : 'var(--red)';
+    const statusIcon  = d.online ? '✅' : '❌';
+
+    // Key privileges to highlight
+    const keyPrivs = ['suspend-acct', 'unsuspend-acct', 'upgrade-account', 'modifyacct', 'createacct', 'limitbw'];
+    const allPrivs  = Object.entries(d.privileges || {});
+    const keyRows   = keyPrivs.map(k => {
+      const val = d.privileges?.[k];
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:13px">${escHtml(k)}</td>
+        <td style="font-size:18px">${val ? '✅' : (val === undefined ? '❓' : '❌')}</td>
+      </tr>`;
+    });
+    const otherRows = allPrivs
+      .filter(([k]) => !keyPrivs.includes(k))
+      .map(([k,v]) => `<tr>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${escHtml(k)}</td>
+        <td style="font-size:14px">${v ? '✅' : '❌'}</td>
+      </tr>`);
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+          <div style="font-size:28px;margin-bottom:8px">${statusIcon}</div>
+          <div style="font-size:32px;font-weight:800;color:${statusColor};margin-bottom:4px">${d.ping_ms} ms</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Ping WHM</div>
+          <div style="font-size:11px;color:${statusColor};font-family:var(--mono)">${d.online ? 'Online' : 'Offline'}</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+          <div style="font-size:28px;margin-bottom:8px">👥</div>
+          <div style="font-size:32px;font-weight:800;color:var(--accent2);margin-bottom:4px">${d.accounts_count ?? '—'}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Акаунти WHM</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">всього акаунтів</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+          <div style="font-size:28px;margin-bottom:8px">📦</div>
+          <div style="font-size:32px;font-weight:800;color:var(--accent);margin-bottom:4px">${(d.packages || []).length}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Пакети (плани)</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">доступні хостингові плани</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Privileges -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px">🔐 Привілеї реселера</div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Привілей</th><th>Статус</th></tr></thead>
+              <tbody>
+                ${keyRows.join('')}
+                ${otherRows.length ? `<tr><td colspan="2" style="color:var(--muted);font-size:11px;padding:8px 20px;font-style:italic">… і ${otherRows.length} інших привілеїв</td></tr>` : ''}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Packages -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px">📦 Пакети (Plans)</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${(d.packages || []).map(p => `
+              <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:13px">
+                ${escHtml(p)}
+              </div>`).join('') || '<div class="empty-state" style="padding:20px">Пакетів немає</div>'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (d.error) {
+      el.innerHTML = `<div class="error-msg show">❌ WHM помилка: ${escHtml(d.error)}</div>`;
+    }
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${escHtml(e.message)}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — Suspend / Unsuspend
+// ═══════════════════════════════════════════
+async function suspendClient(id, email) {
+  const reason = prompt(`Причина суспензії ${email} (або порожньо):`, '');
+  if (reason === null) return; // cancelled
+  try {
+    const res = await apiFetch(`/admin/clients/${id}/suspend`, 'POST', { reason: reason.trim() });
+    toast(`⏸ ${res.cpanel_user} засупендовано`, 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function unsuspendClient(id, email) {
+  if (!confirm(`Відновити (unsuspend) акаунт ${email}?`)) return;
+  try {
+    const res = await apiFetch(`/admin/clients/${id}/unsuspend`, 'POST', {});
+    toast(`▶ ${res.cpanel_user} відновлено`, 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MODAL — Change Plan
+// ═══════════════════════════════════════════
+let changePlanClientId = null;
+
+function openChangePlanModal(id, email) {
+  changePlanClientId = id;
+  document.getElementById('cp-client-email').textContent = email;
+  document.getElementById('cp-cpanel-user').value = '';
+  document.getElementById('cp-modal-error').classList.remove('show');
+  selectedPlan = WHM_PLANS[1].id;
+  renderPlanPicker('cp-plan-picker', selectedPlan);
+  document.getElementById('modal-change-plan').classList.add('open');
+}
+
+function closeChangePlanModal() {
+  document.getElementById('modal-change-plan').classList.remove('open');
+}
+
+async function submitChangePlan() {
+  const cpanelUser = document.getElementById('cp-cpanel-user').value.trim();
+  const newPlan    = selectedPlan;
+  const errEl      = document.getElementById('cp-modal-error');
+  errEl.classList.remove('show');
+
+  if (!newPlan) { showErr(errEl, 'Оберіть план'); return; }
+
+  try {
+    const res = await apiFetch(`/admin/clients/${changePlanClientId}/plan`, 'PUT', {
+      new_plan: newPlan,
+      cpanel_user: cpanelUser || undefined,
+    });
+    closeChangePlanModal();
+    const planLabel = WHM_PLANS.find(p => p.id === newPlan)?.label || newPlan;
+    toast(`✅ План змінено на ${planLabel} для ${res.cpanel_user}`, 'success');
+  } catch (e) {
+    showErr(errEl, e.message);
+  }
 }
 
 async function deleteClient(id, email) {
@@ -2040,13 +2307,15 @@ function showView(name) {
   let idx = 0;
   if (userRole === 'admin') {
     const adminMap = {
-      'admin-billing':  0,
-      'admin-clients':  1,
-      'admin-tickets':  2,
-      'admin-invoices': 3,
-      'admin-logs':     4,
-      'admin-cache':    5,
-      'settings':       6,
+      'admin-dashboard': 0,
+      'admin-billing':   1,
+      'admin-clients':   2,
+      'admin-whm':       3,
+      'admin-tickets':   4,
+      'admin-invoices':  5,
+      'admin-logs':      6,
+      'admin-cache':     7,
+      'settings':        8,
     };
     idx = adminMap[name];
   } else {
@@ -3840,6 +4109,330 @@ async function confirmSimulatedPayment() {
   }
 }
 
+
+// ═══════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════
+async function loadDashboard() {
+  const el = document.getElementById('dashboard-content');
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Завантаження…</div>';
+  try {
+    const d = await apiFetch('/admin/dashboard');
+    el.innerHTML = renderDashboard(d);
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderDashboard(d) {
+  const cards = [
+    { icon: '👥', label: 'Клієнти', value: d.clients_total, sub: `+${d.clients_new_7d} за 7 днів`, color: 'var(--accent)' },
+    { icon: '🎫', label: 'Відкриті тікети', value: d.tickets_open, sub: 'open + pending', color: d.tickets_open > 0 ? 'var(--yellow)' : 'var(--green)' },
+    { icon: '🧾', label: 'Несплачені рахунки', value: d.invoices_unpaid, sub: `${d.invoices_unpaid_amount} EUR`, color: d.invoices_unpaid > 0 ? 'var(--red)' : 'var(--green)' },
+    { icon: '🖥', label: 'WHM акаунти', value: d.whm_accounts, sub: 'у вашому реселері', color: 'var(--accent2)' },
+  ];
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px">`;
+  cards.forEach(c => {
+    html += `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-20px;right:-10px;font-size:64px;opacity:.06">${c.icon}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">${c.label}</div>
+      <div style="font-size:40px;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">${c.sub}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  if (d.recent_events && d.recent_events.length) {
+    html += `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:16px">Останні події</div>
+      <div style="display:flex;flex-direction:column;gap:10px">`;
+    d.recent_events.forEach(e => {
+      const lvlColor = e.level === 'error' ? 'var(--red)' : e.level === 'warning' ? 'var(--yellow)' : 'var(--green)';
+      html += `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:10px">
+        <span style="width:6px;height:6px;border-radius:50%;background:${lvlColor};flex-shrink:0"></span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--accent);min-width:160px">${escHtml(e.event)}</span>
+        <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.message)}</span>
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0">${escHtml(e.email || '')}</span>
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0">${fmtDatetime(e.created_at)}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+
+  return html;
+}
+
+// ═══════════════════════════════════════════
+//  WHM STATUS
+// ═══════════════════════════════════════════
+async function loadWhmStatus() {
+  const el = document.getElementById('whm-status-content');
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div> Перевірка WHM…</div>';
+  try {
+    const d = await apiFetch('/admin/whm/status');
+    el.innerHTML = renderWhmStatus(d);
+  } catch (e) {
+    el.innerHTML = `<div class="error-msg show">${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderWhmStatus(d) {
+  if (!d.online) {
+    return `<div class="whm-block error"><span class="whm-icon">❌</span><div><strong>WHM недоступний</strong><span>${escHtml(d.error || '')}</span></div></div>`;
+  }
+
+  // Ключові привілеї для моніторингу
+  const keyPrivs = [
+    { key: 'modifyacct',      label: 'Змінити акаунт (modifyacct)' },
+    { key: 'suspend-acct',    label: 'Suspend/Unsuspend (suspend-acct)' },
+    { key: 'upgrade-account', label: 'Зміна плану (upgrade-account)' },
+    { key: 'create-acct',     label: 'Створити акаунт (create-acct)' },
+    { key: 'kill-acct',       label: 'Видалити акаунт (kill-acct)' },
+    { key: 'passwd',          label: 'Змінити пароль (passwd)' },
+    { key: 'ssl',             label: 'SSL (ssl)' },
+    { key: 'create-dns',      label: 'Додати DNS зону (create-dns)' },
+    { key: 'edit-dns',        label: 'Редагувати DNS (edit-dns)' },
+    { key: 'add-pkg',         label: 'Додати пакет (add-pkg)' },
+    { key: 'list-accts',      label: 'Список акаунтів (list-accts)' },
+    { key: 'create-user-session', label: 'SSO сесія (create-user-session)' },
+  ];
+
+  const privs = d.privileges || {};
+  const statusColor = d.ping_ms < 300 ? 'var(--green)' : d.ping_ms < 800 ? 'var(--yellow)' : 'var(--red)';
+
+  let html = `
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Статус</div>
+      <div style="font-size:22px;font-weight:800;color:var(--green)">🟢 Online</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Ping</div>
+      <div style="font-size:22px;font-weight:800;color:${statusColor}">${d.ping_ms} ms</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Акаунти</div>
+      <div style="font-size:22px;font-weight:800;color:var(--accent)">${d.accounts_count}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Пакети</div>
+      <div style="font-size:22px;font-weight:800;color:var(--accent2)">${(d.packages || []).length}</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <!-- Привілеї -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:16px">Привілеї WHM</div>
+      <div style="display:flex;flex-direction:column;gap:8px">`;
+
+  keyPrivs.forEach(p => {
+    const val = privs[p.key];
+    const has = val === 1 || val === '1' || val === true;
+    html += `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px">
+      <span style="font-size:13px">${escHtml(p.label)}</span>
+      <span style="font-size:16px">${has ? '✅' : '❌'}</span>
+    </div>`;
+  });
+
+  html += `</div></div>
+    <!-- Пакети -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:16px">Доступні пакети</div>
+      <div style="display:flex;flex-direction:column;gap:8px">`;
+
+  (d.packages || []).forEach(pkg => {
+    html += `<div style="padding:8px 12px;background:var(--bg);border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--accent)">${escHtml(pkg)}</div>`;
+  });
+
+  if (!d.packages || !d.packages.length) {
+    html += '<div style="color:var(--muted);font-size:13px">Пакети не знайдено</div>';
+  }
+
+  html += '</div></div></div>';
+  return html;
+}
+
+// ═══════════════════════════════════════════
+//  SUSPEND / UNSUSPEND
+// ═══════════════════════════════════════════
+let suspendTarget = { id: null, email: '', isUnsuspend: false };
+
+function openSuspendModal(id, email, isUnsuspend) {
+  suspendTarget = { id, email, isUnsuspend };
+  document.getElementById('suspend-modal-title').textContent =
+    isUnsuspend ? '▶ Відновити cPanel акаунт' : '⏸ Призупинити cPanel акаунт';
+  document.getElementById('suspend-client-email').textContent = email;
+  document.getElementById('suspend-cpanel-user').value = '';
+  document.getElementById('suspend-reason').value = '';
+  document.getElementById('suspend-reason-row').style.display = isUnsuspend ? 'none' : '';
+  document.getElementById('suspend-modal-error').classList.remove('show');
+  document.getElementById('btn-submit-suspend').textContent = isUnsuspend ? '▶ Відновити' : '⏸ Призупинити';
+  document.getElementById('btn-submit-suspend').style.background = isUnsuspend ? 'var(--green)' : 'var(--red)';
+  document.getElementById('modal-suspend').classList.add('open');
+}
+
+function closeSuspendModal() {
+  document.getElementById('modal-suspend').classList.remove('open');
+}
+
+async function submitSuspend() {
+  const { id, email, isUnsuspend } = suspendTarget;
+  const cpanelUser = document.getElementById('suspend-cpanel-user').value.trim();
+  const reason     = document.getElementById('suspend-reason').value.trim();
+  const errEl      = document.getElementById('suspend-modal-error');
+  errEl.classList.remove('show');
+
+  const btn = document.getElementById('btn-submit-suspend');
+  btn.disabled = true;
+
+  try {
+    const endpoint = isUnsuspend ? `/admin/clients/${id}/unsuspend` : `/admin/clients/${id}/suspend`;
+    const body = cpanelUser ? { cpanel_user: cpanelUser } : {};
+    if (!isUnsuspend && reason) body.reason = reason;
+
+    const res = await apiFetch(endpoint, 'POST', body);
+    toast(`${isUnsuspend ? 'Відновлено' : 'Призупинено'}: ${res.cpanel_user}`, 'success');
+    closeSuspendModal();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  CHANGE PLAN
+// ═══════════════════════════════════════════
+let changePlanTarget = { id: null, email: '' };
+let selectedChangePlan = WHM_PLANS[1].id;
+
+function openChangePlanModal(id, email) {
+  changePlanTarget = { id, email };
+  document.getElementById('cp-client-email').textContent = email;
+  document.getElementById('cp-cpanel-user').value = '';
+  document.getElementById('cp-modal-error').classList.remove('show');
+  selectedChangePlan = WHM_PLANS[1].id;
+  renderPlanPicker('cp-plan-picker', selectedChangePlan);
+  document.getElementById('cp-plan-picker').addEventListener('click', () => {
+    selectedChangePlan = document.querySelector('#cp-plan-picker .plan-option.selected')?.dataset?.plan || selectedChangePlan;
+  });
+  document.getElementById('modal-change-plan').classList.add('open');
+}
+
+function closeChangePlanModal() {
+  document.getElementById('modal-change-plan').classList.remove('open');
+}
+
+async function submitChangePlan() {
+  const { id } = changePlanTarget;
+  const cpanelUser = document.getElementById('cp-cpanel-user').value.trim();
+  const newPlan    = selectedChangePlan;
+  const errEl      = document.getElementById('cp-modal-error');
+  errEl.classList.remove('show');
+
+  if (!newPlan) { errEl.textContent = 'Оберіть план'; errEl.classList.add('show'); return; }
+
+  const btn = document.getElementById('btn-submit-plan');
+  btn.disabled = true;
+
+  try {
+    const body = { new_plan: newPlan };
+    if (cpanelUser) body.cpanel_user = cpanelUser;
+    const res = await apiFetch(`/admin/clients/${id}/plan`, 'PUT', body);
+    const planLabel = WHM_PLANS.find(p => p.id === newPlan)?.label || newPlan;
+    toast(`План змінено на ${planLabel} для ${res.cpanel_user}`, 'success');
+    closeChangePlanModal();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Fix selectPlan to update selectedChangePlan too
+const _origSelectPlan = selectPlan;
+function selectPlan(containerId, planId) {
+  _origSelectPlan(containerId, planId);
+  if (containerId === 'cp-plan-picker') selectedChangePlan = planId;
+}
+
 </script>
+
+<!-- Modal: Suspend / Unsuspend -->
+<div class="modal-backdrop" id="modal-suspend">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeSuspendModal()">✕</button>
+    <div class="modal-title" id="suspend-modal-title">⏸ Призупинити cPanel акаунт</div>
+
+    <div style="background:rgba(247,90,90,.06);border:1px solid rgba(247,90,90,.2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:20px">
+      ⚠️ <strong>Увага!</strong> Після suspend клієнт не зможе отримати доступ до свого сайту та cPanel.
+    </div>
+
+    <div class="field">
+      <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Email клієнта</label>
+      <div id="suspend-client-email" style="font-family:var(--mono);font-size:13px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted)"></div>
+    </div>
+
+    <div class="field">
+      <label style="display:flex;justify-content:space-between;align-items:center">
+        <span>cPanel username (залиште порожнім для авто-пошуку)</span>
+      </label>
+      <input type="text" id="suspend-cpanel-user" placeholder="наприклад: marysali" style="font-family:var(--mono)">
+    </div>
+
+    <div class="field" id="suspend-reason-row">
+      <label>Причина (необов'язково)</label>
+      <input type="text" id="suspend-reason" placeholder="Несплачений рахунок">
+    </div>
+
+    <div class="error-msg" id="suspend-modal-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeSuspendModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" id="btn-submit-suspend" style="width:auto;background:var(--red)" onclick="submitSuspend()">⏸ Призупинити</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Change Plan -->
+<div class="modal-backdrop" id="modal-change-plan">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="closeChangePlanModal()">✕</button>
+    <div class="modal-title">📦 Змінити WHM пакет</div>
+
+    <div class="field">
+      <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Email клієнта</label>
+      <div id="cp-client-email" style="font-family:var(--mono);font-size:13px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted)"></div>
+    </div>
+
+    <div class="field">
+      <label style="display:flex;justify-content:space-between;align-items:center">
+        <span>cPanel username (залиште порожнім для авто-пошуку)</span>
+      </label>
+      <input type="text" id="cp-cpanel-user" placeholder="наприклад: marysali" style="font-family:var(--mono)">
+    </div>
+
+    <div class="field">
+      <label>Новий пакет хостингу *</label>
+      <div class="plan-picker" id="cp-plan-picker"></div>
+    </div>
+
+    <div class="error-msg" id="cp-modal-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeChangePlanModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" id="btn-submit-plan" style="width:auto" onclick="submitChangePlan()">📦 Змінити план</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
