@@ -1979,6 +1979,12 @@ async function loadWhmStatus() {
         <!-- Privileges -->
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
           <div style="font-size:14px;font-weight:700;margin-bottom:16px">🔐 Привілеї реселера</div>
+          ${d.privileges === null ? `
+            <div style="background:rgba(247,195,90,.1);border:1px solid rgba(247,195,90,.2);border-radius:8px;padding:12px;font-size:13px;color:var(--yellow);margin-top:20px;">
+              ℹ️ Ваш API токен налаштовано з обмеженими правами (що добре для безпеки), тому він не має доступу до команди "myprivs" для читання повного списку привілеїв. 
+              Ви можете керувати клієнтами, але цей список тут не відображатиметься.
+            </div>
+          ` : `
           <div class="table-wrapper">
             <table>
               <thead><tr><th>Привілей</th><th>Статус</th></tr></thead>
@@ -1988,6 +1994,7 @@ async function loadWhmStatus() {
               </tbody>
             </table>
           </div>
+          `}
         </div>
 
         <!-- Packages -->

@@ -312,7 +312,7 @@ if ($method === 'GET' && $path === '/admin/billing') {
     if (!empty($cfg['whm_token'])) {
         try {
             $whm        = new WhmService();
-            $whmAccount = $whm->getAccountByEmail($email);
+            $whmAccount = $whm->findAccountForEmail($email);
         } catch (\Throwable $e) {
             $whmAccount = ['error' => $e->getMessage()];
         }

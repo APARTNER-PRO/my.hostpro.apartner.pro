@@ -254,10 +254,13 @@ class WhmService
     }
 
     // ── Отримати WHM привілеї реселера (myprivs) ─────────────────────────────
-    public function getPrivileges(): array
+    public function getPrivileges(): ?array
     {
         $res = $this->request('myprivs', []);
-        return $res['privs'] ?? [];
+        if (!empty($res['cpanelresult']['error']) && str_contains(strtolower($res['cpanelresult']['error']), 'access denied')) {
+            return null; // Token restricts access to myprivs
+        }
+        return $res['privs'] ?? null;
     }
 
     // ── Список пакетів (планів) хостингу ─────────────────────────────────────
