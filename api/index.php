@@ -360,7 +360,7 @@ if ($method === 'GET' && $path === '/admin/clients') {
     AuthMiddleware::requireAdmin();
     $db      = Database::get();
     $clients = $db->query(
-        'SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC'
+        'SELECT id, email, name, role, admin_notes, created_at FROM users ORDER BY created_at DESC'
     )->fetchAll();
     respond(['clients' => $clients]);
 }
@@ -451,6 +451,15 @@ if ($method === 'PUT' && preg_match('#^/admin/clients/(\d+)$#', $path, $m)) {
 
     $vals[] = $m[1];
     $db->prepare('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id = ?')->execute($vals);
+    respond(['success' => true]);
+}
+
+// ── PUT /admin/clients/{id}/notes ── оновити нотатки адміна ───────────────────
+if ($method === 'PUT' && preg_match('#^/admin/clients/(\d+)/notes$#', $path, $m)) {
+    AuthMiddleware::requireAdmin();
+    $db = Database::get();
+    $notes = $body['admin_notes'] ?? null;
+    $db->prepare('UPDATE users SET admin_notes = ? WHERE id = ?')->execute([$notes, $m[1]]);
     respond(['success' => true]);
 }
 

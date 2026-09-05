@@ -68,6 +68,7 @@ class Database
                     password   VARCHAR(255)    NOT NULL,
                     role       ENUM('admin','client') NOT NULL DEFAULT 'client',
                     name       VARCHAR(255)    DEFAULT NULL,
+                    admin_notes TEXT           DEFAULT NULL,
                     created_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
                                                ON UPDATE CURRENT_TIMESTAMP,
@@ -172,6 +173,7 @@ class Database
                     password   TEXT    NOT NULL,
                     role       TEXT    NOT NULL DEFAULT 'client',
                     name       TEXT,
+                    admin_notes TEXT,
                     created_at TEXT    DEFAULT (datetime('now')),
                     updated_at TEXT    DEFAULT (datetime('now'))
                 );
@@ -235,6 +237,13 @@ class Database
                 );
                 INSERT OR IGNORE INTO settings (key, value) VALUES ('payment_methods', '{\"paddle\":true,\"monobank\":false,\"wayforpay\":false}');
             ");
+        }
+        
+        // Add admin_notes column if not exists (for existing databases)
+        try {
+            $pdo->exec("ALTER TABLE users ADD COLUMN admin_notes TEXT DEFAULT NULL");
+        } catch (\PDOException $e) {
+            // Ignore if column already exists
         }
     }
 }

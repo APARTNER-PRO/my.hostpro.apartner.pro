@@ -1397,6 +1397,23 @@
   </div>
 </div>
 
+<!-- Modal: Admin Notes -->
+<div class="modal-backdrop" id="modal-admin-notes">
+  <div class="modal">
+    <button class="modal-close" onclick="closeNotesModal()">✕</button>
+    <div class="modal-title">📝 Внутрішні нотатки</div>
+    <div class="field">
+      <label>Нотатки (бачить тільки адмін)</label>
+      <textarea id="edit-notes-text" rows="5" placeholder="Додайте нотатки сюди..." style="width:100%;font-family:var(--font);padding:10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);color:var(--text);resize:vertical;"></textarea>
+    </div>
+    <div class="error-msg" id="notes-modal-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeNotesModal()">Скасувати</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="submitNotes()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Change Plan -->
 <div class="modal-backdrop" id="modal-change-plan">
   <div class="modal">
@@ -1831,6 +1848,7 @@ async function loadAdminClients() {
   el.innerHTML = `<div class="loading-state"><div class="spinner"></div> ${i18n.t('state.loading')}</div>`;
   try {
     const data = await apiFetch('/admin/clients');
+    window.adminClients = data.clients;
     el.innerHTML = renderClientsTable(data.clients);
   } catch (e) {
     el.innerHTML = `<div class="error-msg show">${e.message}</div>`;
@@ -1852,6 +1870,7 @@ function renderClientsTable(clients) {
         <button class="btn btn-ghost btn-sm" onclick="lookupClient('${escHtml(c.email)}')">Підписки</button>
         <button class="btn btn-ghost btn-sm" onclick="openProvisionModal('${escHtml(c.email)}')">🖥 WHM</button>
         <button class="btn btn-ghost btn-sm" title="Змінити головний домен cPanel" onclick="openChangeDomainModal(${c.id}, '${escHtml(c.email)}')">🌐</button>
+        <button class="btn btn-ghost btn-sm" title="Нотатки" onclick="openNotesModal(${c.id})">📝</button>
         <button class="btn btn-ghost btn-sm" title="Змінити план WHM" onclick="openChangePlanModal(${c.id}, '${escHtml(c.email)}')">📦</button>
         <button class="btn btn-ghost btn-sm" title="Suspend cPanel" onclick="openSuspendModal(${c.id}, '${escHtml(c.email)}', false)">⏸</button>
         <button class="btn btn-ghost btn-sm" title="Unsuspend cPanel" onclick="openSuspendModal(${c.id}, '${escHtml(c.email)}', true)">▶</button>
@@ -4372,6 +4391,38 @@ async function submitChangePlan() {
 }
 
 
+
+// ═════════════════════════════════════════════
+//  MODAL — Admin Notes
+// ═════════════════════════════════════════════
+function openNotesModal(clientId) {
+  const client = window.adminClients?.find(c => c.id === clientId);
+  if (!client) return;
+  document.getElementById('edit-notes-text').value = client.admin_notes || '';
+  document.getElementById('notes-modal-error').classList.remove('show');
+  document.getElementById('modal-admin-notes').dataset.clientId = clientId;
+  document.getElementById('modal-admin-notes').classList.add('open');
+}
+
+function closeNotesModal() {
+  document.getElementById('modal-admin-notes').classList.remove('open');
+}
+
+async function submitNotes() {
+  const clientId = document.getElementById('modal-admin-notes').dataset.clientId;
+  const notes    = document.getElementById('edit-notes-text').value;
+  const err      = document.getElementById('notes-modal-error');
+  err.classList.remove('show');
+
+  try {
+    await apiFetch(`/admin/clients/${clientId}/notes`, 'PUT', { admin_notes: notes });
+    closeNotesModal();
+    toast('Нотатки збережено', 'success');
+    loadAdminClients();
+  } catch (e) {
+    showErr(err, e.message);
+  }
+}
 
 </script>
 
