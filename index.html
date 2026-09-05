@@ -1346,6 +1346,10 @@
       <input type="email" id="new-email" placeholder="client@example.com">
     </div>
     <div class="field">
+      <label>Домен cPanel (необов'язково)</label>
+      <input type="text" id="new-domain" placeholder="example.com (залиште порожнім для авто-генерації)">
+    </div>
+    <div class="field">
       <label data-i18n="label.password_req">Пароль *</label>
       <input type="password" id="new-password" placeholder="мін. 6 символів" data-i18n-placeholder="placeholder.pwd_min">
     </div>
@@ -1652,6 +1656,7 @@ function renderPlanPicker(containerId, currentPlan) {
 
 function selectPlan(containerId, planId) {
   selectedPlan = planId;
+  if (containerId === 'cp-plan-picker') selectedChangePlan = planId;
   document.querySelectorAll(`#${containerId} .plan-option`).forEach(el => {
     el.classList.toggle('selected', el.querySelector('span').textContent === WHM_PLANS.find(p => p.id === planId)?.label);
   });
@@ -2087,6 +2092,7 @@ async function deleteClient(id, email) {
 function openCreateModal() {
   document.getElementById('new-name').value = '';
   document.getElementById('new-email').value = '';
+  document.getElementById('new-domain').value = '';
   document.getElementById('new-password').value = '';
   document.getElementById('modal-error').classList.remove('show');
   selectedPlan = WHM_PLANS[1].id; // reset to Personal
@@ -2173,6 +2179,7 @@ async function clearCache(filename = '') {
 async function createClient() {
   const name     = document.getElementById('new-name').value.trim();
   const email    = document.getElementById('new-email').value.trim();
+  const domain   = document.getElementById('new-domain').value.trim();
   const password = document.getElementById('new-password').value;
   const plan     = selectedPlan;
   const err      = document.getElementById('modal-error');
@@ -2181,7 +2188,7 @@ async function createClient() {
   if (!email || !password) { showErr(err, 'Email та пароль обов\'язкові'); return; }
 
   try {
-    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan });
+    const res = await apiFetch('/admin/clients', 'POST', { name, email, password, plan, domain });
     closeModal();
     const planLabel = WHM_PLANS.find(p => p.id === plan)?.label || plan;
     let msg = `Акаунт ${email} створено`;
@@ -4357,12 +4364,7 @@ async function submitChangePlan() {
   }
 }
 
-// Fix selectPlan to update selectedChangePlan too
-const _origSelectPlan = selectPlan;
-function selectPlan(containerId, planId) {
-  _origSelectPlan(containerId, planId);
-  if (containerId === 'cp-plan-picker') selectedChangePlan = planId;
-}
+
 
 </script>
 

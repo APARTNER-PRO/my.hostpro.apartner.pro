@@ -373,6 +373,7 @@ if ($method === 'POST' && $path === '/admin/clients') {
     $password = trim($body['password'] ?? '');
     $name     = trim($body['name']     ?? '');
     $plan     = trim($body['plan']     ?? $cfg['whm_plan']);
+    $domain   = trim($body['domain']   ?? '');
 
     if (!$email || !$password) respond(['error' => 'Email and password required'], 400);
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) respond(['error' => 'Invalid email'], 422);
@@ -397,7 +398,7 @@ if ($method === 'POST' && $path === '/admin/clients') {
             $hasActive = !empty(array_filter($subs, fn($s) => in_array($s['status'], ['active', 'trialing'])));
             if ($hasActive) {
                 $whm       = new WhmService();
-                $whmResult = $whm->ensureAccount($email, $plan);
+                $whmResult = $whm->ensureAccount($email, $plan, $domain ?: null);
             }
         } catch (\Throwable $e) {
             $whmResult = ['error' => $e->getMessage()];
@@ -1186,6 +1187,126 @@ if ($method === 'GET' && preg_match('#^/admin/clients/(\d+)/cpanel-sso$#', $path
     }
 }
 
+// ── PUT /admin/clients/{id}/domain ── змінити головний домен в cPanel ─────────
+if ($method === 'PUT' && preg_match('#^/admin/clients/(\d+)/domain$#', $path, $m)) {
+    AuthMiddleware::requireAdmin();
+
+    $newDomain  = strtolower(trim($body['domain']      ?? ''));
+    $cpanelUser = trim($body['cpanel_user'] ?? ''); // необов'язково — якщо авто-пошук не спрацював
+
+    if (!$newDomain) respond(['error' => 'domain required'], 400);
+
+    // Базова валідація домену
+    if (!preg_match('/^[a-z0-9][a-z0-9\-\.]{1,61}[a-z0-9]\.[a-z]{2,}$/i', $newDomain)) {
+        respond(['error' => 'Invalid domain format'], 422);
+    }
+
+    if (empty($cfg['whm_token'])) {
+        respond(['error' => 'WHM not configured'], 503);
+    }
+
+    $db   = Database::get();
+    $stmt = $db->prepare('SELECT email FROM users WHERE id = ?');
+    $stmt->execute([$m[1]]);
+    $user = $stmt->fetch();
+    if (!$user) respond(['error' => 'User not found'], 404);
+
+    try {
+        $whm = new WhmService();
+
+        // Якщо адмін вказав cPanel username вручну — використовуємо його
+        if ($cpanelUser) {
+            // Ми пропускаємо попередню перевірку існування, оскільки акаунт може належати 
+            // іншому реселеру (і не бути доступним через listaccts/accountsummary).
+            // Довіряємо вводу, WHM API сам поверне помилку, якщо акаунту немає.
+        } else {
+            // Авто-пошук за email клієнта
+            $account = $whm->findAccountForEmail($user['email']);
+            if (!$account) {
+                respond([
+                    'error' => 'cPanel account not found for ' . $user['email'],
+                    'hint'  => 'Вкажіть cPanel username вручну у полі cpanel_user',
+                ], 404);
+            }
+            $cpanelUser = $account['user'] ?? $account['login'] ?? null;
+            if (!$cpanelUser) {
+                respond(['error' => 'Could not determine cPanel username'], 500);
+            }
+        }
+
+        $result = $whm->changePrimaryDomain($cpanelUser, $newDomain);
+
+        Logger::info('whm.domain_changed', "Primary domain changed to {$newDomain}", $user['email'], [
+            'cpanel_user' => $cpanelUser,
+            'new_domain'  => $newDomain,
+        ]);
+
+        if (!$result['success']) {
+            respond(['error' => $result['message']], 400);
+        }
+
+        respond([
+            'success'     => true,
+            'cpanel_user' => $cpanelUser,
+            'new_domain'  => $newDomain,
+            'message'     => $result['message'],
+        ]);
+    } catch (\Throwable $e) {
+        respond(['error' => $e->getMessage()], 500);
+    }
+}
+
+// ── GET /admin/clients/{id}/cpanel-info ── знайти cPanel акаунт клієнта ────────
+if ($method === 'GET' && preg_match('#^/admin/clients/(\d+)/cpanel-info$#', $path, $m)) {
+    AuthMiddleware::requireAdmin();
+
+    if (empty($cfg['whm_token'])) {
+        respond(['error' => 'WHM not configured'], 503);
+    }
+
+    $db   = Database::get();
+    $stmt = $db->prepare('SELECT email FROM users WHERE id = ?');
+    $stmt->execute([$m[1]]);
+    $user = $stmt->fetch();
+    if (!$user) respond(['error' => 'User not found'], 404);
+
+    try {
+        $whm     = new WhmService();
+        $account = $whm->findAccountForEmail($user['email']);
+
+        if (!$account) {
+            // Повертаємо підказку: список усіх акаунтів зі схожим username
+            $allAccounts = $whm->listAccounts();
+            $local       = explode('@', $user['email'])[0];
+            $suggestions = array_filter($allAccounts, fn($a) =>
+                str_contains(strtolower($a['user'] ?? ''), strtolower(substr($local, 0, 4))) ||
+                str_contains(strtolower($a['email'] ?? ''), strtolower($user['email']))
+            );
+            respond([
+                'found'       => false,
+                'email'       => $user['email'],
+                'suggestions' => array_values(array_map(fn($a) => [
+                    'user'   => $a['user']   ?? '',
+                    'domain' => $a['domain'] ?? '',
+                    'email'  => $a['email']  ?? '',
+                    'plan'   => $a['plan']   ?? '',
+                ], $suggestions)),
+            ]);
+        }
+
+        respond([
+            'found'       => true,
+            'email'       => $user['email'],
+            'cpanel_user' => $account['user']   ?? $account['login'] ?? '',
+            'domain'      => $account['domain'] ?? '',
+            'plan'        => $account['plan']   ?? '',
+            'acct_email'  => $account['email']  ?? '',
+        ]);
+    } catch (\Throwable $e) {
+        respond(['error' => $e->getMessage()], 500);
+    }
+}
+
 // ── GET /admin/cache ── отримати інфо про кеш ──────────────
 if ($method === 'GET' && $path === '/admin/cache') {
     AuthMiddleware::requireAdmin();
@@ -1235,6 +1356,221 @@ if ($method === 'POST' && $path === '/admin/cache/clear') {
     respond(['success' => true]);
 }
 
+// ── GET /admin/dashboard ── зведена статистика для адміна ────────────────
+if ($method === 'GET' && $path === '/admin/dashboard') {
+    AuthMiddleware::requireAdmin();
+    $db      = Database::get();
+    $since7d = date('Y-m-d H:i:s', strtotime('-7 days'));
+
+    $clientsTotal = (int)$db->query("SELECT COUNT(*) FROM users WHERE role='client'")->fetchColumn();
+
+    $stmt = $db->prepare("SELECT COUNT(*) FROM users WHERE role='client' AND created_at >= ?");
+    $stmt->execute([$since7d]);
+    $clientsNew7d = (int)$stmt->fetchColumn();
+
+    $ticketsOpen = (int)$db->query(
+        "SELECT COUNT(*) FROM tickets WHERE status IN ('open','pending')"
+    )->fetchColumn();
+
+    $stmt = $db->query("SELECT COUNT(*), COALESCE(SUM(amount),0) FROM invoices WHERE status='unpaid'");
+    [$invoicesUnpaid, $invoicesSum] = $stmt->fetch(\PDO::FETCH_NUM);
+
+    $recentEvents = $db->query(
+        "SELECT event, level, email, message, created_at FROM event_logs ORDER BY created_at DESC LIMIT 5"
+    )->fetchAll();
+
+    $whmAccounts = 0;
+    if (!empty($cfg['whm_token'])) {
+        try {
+            $whm = new WhmService();
+            $whmAccounts = count($whm->listAccounts());
+        } catch (\Throwable) {}
+    }
+
+    respond([
+        'clients_total'          => $clientsTotal,
+        'clients_new_7d'         => $clientsNew7d,
+        'tickets_open'           => $ticketsOpen,
+        'invoices_unpaid'        => (int)$invoicesUnpaid,
+        'invoices_unpaid_amount' => round((float)$invoicesSum, 2),
+        'whm_accounts'           => $whmAccounts,
+        'recent_events'          => $recentEvents,
+    ]);
+}
+
+// ── GET /admin/whm/status ── перевірка WHM: ping, привілеї, пакети ────────
+if ($method === 'GET' && $path === '/admin/whm/status') {
+    AuthMiddleware::requireAdmin();
+
+    if (empty($cfg['whm_token'])) {
+        respond(['error' => 'WHM not configured'], 503);
+    }
+
+    $whm   = new WhmService();
+    $start = microtime(true);
+
+    try {
+        $privs    = $whm->getPrivileges();
+        $pingMs   = round((microtime(true) - $start) * 1000);
+        $packages = $whm->listPackages();
+        $accounts = count($whm->listAccounts());
+
+        respond([
+            'online'         => true,
+            'ping_ms'        => $pingMs,
+            'privileges'     => $privs,
+            'packages'       => array_values(array_filter($packages)),
+            'accounts_count' => $accounts,
+        ]);
+    } catch (\Throwable $e) {
+        respond([
+            'online'  => false,
+            'ping_ms' => round((microtime(true) - $start) * 1000),
+            'error'   => $e->getMessage(),
+        ]);
+    }
+}
+
+// ── POST /admin/clients/{id}/suspend ── призупинити cPanel акаунт ─────────
+if ($method === 'POST' && preg_match('#^/admin/clients/(\d+)/suspend$#', $path, $m)) {
+    AuthMiddleware::requireAdmin();
+
+    $db   = Database::get();
+    $stmt = $db->prepare('SELECT email FROM users WHERE id = ?');
+    $stmt->execute([$m[1]]);
+    $user = $stmt->fetch();
+    if (!$user) respond(['error' => 'User not found'], 404);
+
+    $cpanelUser = trim($body['cpanel_user'] ?? '');
+    $reason     = trim($body['reason'] ?? 'Suspended by admin');
+
+    if (!$cpanelUser) {
+        // Авто-пошук
+        try {
+            $whm     = new WhmService();
+            $account = $whm->findAccountForEmail($user['email']);
+            if (!$account) respond(['error' => 'cPanel account not found', 'hint' => 'Вкажіть cpanel_user вручну'], 404);
+            $cpanelUser = $account['user'] ?? $account['login'] ?? null;
+            if (!$cpanelUser) respond(['error' => 'Could not determine cPanel username'], 500);
+        } catch (\Throwable $e) {
+            respond(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    try {
+        $whm    = new WhmService();
+        $result = $whm->suspendAccount($cpanelUser, $reason);
+
+        Logger::info('whm.suspend', "Account suspended: {$cpanelUser}", $user['email'], [
+            'cpanel_user' => $cpanelUser,
+            'reason'      => $reason,
+        ]);
+
+        if (!$result['success']) respond(['error' => $result['message']], 400);
+        respond(['success' => true, 'cpanel_user' => $cpanelUser, 'message' => $result['message']]);
+    } catch (\Throwable $e) {
+        respond(['error' => $e->getMessage()], 500);
+    }
+}
+
+// ── POST /admin/clients/{id}/unsuspend ── відновити cPanel акаунт ─────────
+if ($method === 'POST' && preg_match('#^/admin/clients/(\d+)/unsuspend$#', $path, $m)) {
+    AuthMiddleware::requireAdmin();
+
+    $db   = Database::get();
+    $stmt = $db->prepare('SELECT email FROM users WHERE id = ?');
+    $stmt->execute([$m[1]]);
+    $user = $stmt->fetch();
+    if (!$user) respond(['error' => 'User not found'], 404);
+
+    $cpanelUser = trim($body['cpanel_user'] ?? '');
+
+    if (!$cpanelUser) {
+        try {
+            $whm     = new WhmService();
+            $account = $whm->findAccountForEmail($user['email']);
+            if (!$account) respond(['error' => 'cPanel account not found', 'hint' => 'Вкажіть cpanel_user вручну'], 404);
+            $cpanelUser = $account['user'] ?? $account['login'] ?? null;
+            if (!$cpanelUser) respond(['error' => 'Could not determine cPanel username'], 500);
+        } catch (\Throwable $e) {
+            respond(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    try {
+        $whm    = new WhmService();
+        $result = $whm->unsuspendAccount($cpanelUser);
+
+        Logger::info('whm.unsuspend', "Account unsuspended: {$cpanelUser}", $user['email'], [
+            'cpanel_user' => $cpanelUser,
+        ]);
+
+        if (!$result['success']) respond(['error' => $result['message']], 400);
+        respond(['success' => true, 'cpanel_user' => $cpanelUser, 'message' => $result['message']]);
+    } catch (\Throwable $e) {
+        respond(['error' => $e->getMessage()], 500);
+    }
+}
+
+// ── PUT /admin/clients/{id}/plan ── змінити WHM пакет клієнта ────────────
+if ($method === 'PUT' && preg_match('#^/admin/clients/(\d+)/plan$#', $path, $m)) {
+    AuthMiddleware::requireAdmin();
+
+    $newPlan    = trim($body['new_plan']    ?? '');
+    $cpanelUser = trim($body['cpanel_user'] ?? '');
+
+    if (!$newPlan) respond(['error' => 'new_plan required'], 400);
+
+    $allowedPlans = [
+        'xhkazoyb_Starter',
+        'xhkazoyb_Personal',
+        'xhkazoyb_Business',
+        'xhkazoyb_Business-Special',
+        'xhkazoyb_Agency',
+        'xhkazoyb_Agency Pro',
+    ];
+    if (!in_array($newPlan, $allowedPlans, true)) {
+        respond(['error' => 'Invalid plan: ' . $newPlan], 422);
+    }
+
+    $db   = Database::get();
+    $stmt = $db->prepare('SELECT email FROM users WHERE id = ?');
+    $stmt->execute([$m[1]]);
+    $user = $stmt->fetch();
+    if (!$user) respond(['error' => 'User not found'], 404);
+
+    if (!$cpanelUser) {
+        try {
+            $whm     = new WhmService();
+            $account = $whm->findAccountForEmail($user['email']);
+            if (!$account) respond(['error' => 'cPanel account not found', 'hint' => 'Вкажіть cpanel_user вручну'], 404);
+            $cpanelUser = $account['user'] ?? $account['login'] ?? null;
+            if (!$cpanelUser) respond(['error' => 'Could not determine cPanel username'], 500);
+        } catch (\Throwable $e) {
+            respond(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    try {
+        $whm    = new WhmService();
+        $result = $whm->changeAccountPlan($cpanelUser, $newPlan);
+
+        Logger::info('whm.plan_changed', "Plan changed to {$newPlan} for {$cpanelUser}", $user['email'], [
+            'cpanel_user' => $cpanelUser,
+            'new_plan'    => $newPlan,
+        ]);
+
+        if (!$result['success']) respond(['error' => $result['message']], 400);
+        respond([
+            'success'     => true,
+            'cpanel_user' => $cpanelUser,
+            'new_plan'    => $newPlan,
+            'message'     => $result['message'],
+        ]);
+    } catch (\Throwable $e) {
+        respond(['error' => $e->getMessage()], 500);
+    }
+}
+
 // ── 404 ───────────────────────────────────────────────────────────────────────
 respond(['error' => 'Not found', 'path' => $path], 404);
-

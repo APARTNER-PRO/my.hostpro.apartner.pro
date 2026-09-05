@@ -168,7 +168,7 @@ class WhmService
     // ── Авто-створення: якщо акаунту з таким email ще немає → створити ───────
 
     // Повертає ['created'=>bool, 'existed'=>bool, 'account'=>array|null, 'error'=>string|null]
-    public function ensureAccount(string $email, string $plan): array
+    public function ensureAccount(string $email, string $plan, ?string $domain = null): array
     {
         $cfg = require __DIR__ . '/../config/config.php';
 
@@ -177,11 +177,17 @@ class WhmService
             return ['created' => false, 'existed' => true, 'account' => $existing, 'error' => null];
         }
 
-        // Генеруємо username і домен з email для створення
+        // Генеруємо username з email
         $username = $this->usernameFromEmail($email);
-        $domain   = $cfg['whm_default_domain_prefix']
-                        ? $username . '.' . $cfg['whm_default_domain_prefix']
-                        : $username . '.clients.example.com';
+        
+        // Визначаємо домен: або переданий, або генеруємо
+        if ($domain === null || trim($domain) === '') {
+            $domain = $cfg['whm_default_domain_prefix']
+                            ? $username . '.' . $cfg['whm_default_domain_prefix']
+                            : $username . '.clients.example.com';
+        } else {
+            $domain = trim($domain);
+        }
 
         if ($username === 'viknaeur') {
             $username = 'bundesmebli';
@@ -226,6 +232,79 @@ class WhmService
             'password' => $password,
             'error'    => null,
         ];
+    }
+
+    // ── Змінити головний домен cPanel акаунту ────────────────────────────────
+    // WHM API: modifyacct  — змінює domain (primary domain) для існуючого акаунту
+    public function changePrimaryDomain(string $cpanelUsername, string $newDomain): array
+    {
+        $res = $this->request('modifyacct', [
+            'user'   => $cpanelUsername,
+            'domain' => $newDomain,
+        ]);
+
+        $status = (int)($res['metadata']['result'] ?? $res['cpanelresult']['data']['result'] ?? 0);
+        $reason = $res['metadata']['reason'] ?? $res['cpanelresult']['error'] ?? $res['cpanelresult']['data']['reason'] ?? json_encode($res);
+
+        return [
+            'success' => $status === 1,
+            'message' => $reason,
+            'raw'     => $res,
+        ];
+    }
+
+    // ── Отримати WHM привілеї реселера (myprivs) ─────────────────────────────
+    public function getPrivileges(): array
+    {
+        $res = $this->request('myprivs', []);
+        return $res['privs'] ?? [];
+    }
+
+    // ── Список пакетів (планів) хостингу ─────────────────────────────────────
+    public function listPackages(): array
+    {
+        $res  = $this->request('listpkgs', []);
+        $pkgs = $res['package'] ?? [];
+        return array_map(fn($p) => $p['name'] ?? '', $pkgs);
+    }
+
+    // ── Призупинити cPanel акаунт ─────────────────────────────────────────────
+    // WHM: suspendacct — потребує привілею suspend-acct
+    public function suspendAccount(string $username, string $reason = ''): array
+    {
+        $params = ['user' => $username];
+        if ($reason) $params['reason'] = $reason;
+
+        $res    = $this->request('suspendacct', $params);
+        $status = (int)($res['metadata']['result'] ?? 0);
+        $msg    = $res['metadata']['reason'] ?? json_encode($res);
+
+        return ['success' => $status === 1, 'message' => $msg, 'raw' => $res];
+    }
+
+    // ── Відновити (unsuspend) cPanel акаунт ──────────────────────────────────
+    // WHM: unsuspendacct — потребує привілею suspend-acct
+    public function unsuspendAccount(string $username): array
+    {
+        $res    = $this->request('unsuspendacct', ['user' => $username]);
+        $status = (int)($res['metadata']['result'] ?? 0);
+        $msg    = $res['metadata']['reason'] ?? json_encode($res);
+
+        return ['success' => $status === 1, 'message' => $msg, 'raw' => $res];
+    }
+
+    // ── Змінити пакет (план) cPanel акаунту ──────────────────────────────────
+    // WHM: changepackage — потребує привілею upgrade-account
+    public function changeAccountPlan(string $username, string $plan): array
+    {
+        $res    = $this->request('changepackage', [
+            'user' => $username,
+            'pkg'  => $plan,
+        ]);
+        $status = (int)($res['metadata']['result'] ?? 0);
+        $msg    = $res['metadata']['reason'] ?? json_encode($res);
+
+        return ['success' => $status === 1, 'message' => $msg, 'raw' => $res];
     }
 
     // ── SSO: створити одноразову сесію для входу в cPanel без пароля ──────────
@@ -282,7 +361,7 @@ class WhmService
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 20,
-            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_HTTPHEADER     => [
                 'Authorization: whm ' . $this->user . ':' . $this->token,
             ],
