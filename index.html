@@ -1361,7 +1361,7 @@
 
 <!-- Modal: Change Primary cPanel Domain -->
 <div class="modal-backdrop" id="modal-change-domain">
-  <div class="modal">
+  <div class="modal" style="max-width:500px">
     <button class="modal-close" onclick="closeChangeDomainModal()">✕</button>
     <div class="modal-title">🌐 Змінити головний домен cPanel</div>
 
@@ -1370,9 +1370,22 @@
     </div>
 
     <div class="field">
-      <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Поточний email клієнта</label>
+      <label style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Email клієнта</label>
       <div id="cd-client-email" style="font-family:var(--mono);font-size:13px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);"></div>
     </div>
+
+    <!-- cPanel акаунт (авто-пошук або ручне введення) -->
+    <div class="field">
+      <label style="display:flex;justify-content:space-between;align-items:center">
+        <span>cPanel username</span>
+        <button class="btn btn-ghost btn-sm" style="padding:3px 10px;font-size:11px" onclick="lookupCpanelUser()">🔍 Знайти</button>
+      </label>
+      <input type="text" id="cd-cpanel-user" placeholder="наприклад: marysali"
+        style="font-family:var(--mono);"
+        oninput="document.getElementById('cd-lookup-result').innerHTML=''">
+      <div id="cd-lookup-result" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+
     <div class="field">
       <label>Новий головний домен *</label>
       <input type="text" id="cd-new-domain" placeholder="example.com" style="text-transform:lowercase;">
@@ -2280,7 +2293,9 @@ async function updateClient() {
 // ═════════════════════════════════════════════
 function openChangeDomainModal(clientId, email) {
   document.getElementById('cd-client-email').textContent = email;
+  document.getElementById('cd-cpanel-user').value = '';
   document.getElementById('cd-new-domain').value = '';
+  document.getElementById('cd-lookup-result').innerHTML = '';
   document.getElementById('cd-modal-error').classList.remove('show');
   document.getElementById('modal-change-domain').dataset.clientId = clientId;
   document.getElementById('modal-change-domain').classList.add('open');
@@ -2290,10 +2305,54 @@ function closeChangeDomainModal() {
   document.getElementById('modal-change-domain').classList.remove('open');
 }
 
+async function lookupCpanelUser() {
+  const clientId   = document.getElementById('modal-change-domain').dataset.clientId;
+  const resultEl   = document.getElementById('cd-lookup-result');
+  const cpanelInp  = document.getElementById('cd-cpanel-user');
+
+  resultEl.innerHTML = '<span style="color:var(--muted)">🔍 Пошук…</span>';
+
+  try {
+    const res = await apiFetch(`/admin/clients/${clientId}/cpanel-info`);
+
+    if (res.found) {
+      cpanelInp.value = res.cpanel_user;
+      resultEl.innerHTML = `
+        <div style="background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.25);border-radius:8px;padding:10px 12px;color:var(--green)">
+          ✅ Знайдено: <strong style="font-family:var(--mono)">${escHtml(res.cpanel_user)}</strong>
+          <span style="color:var(--muted);margin-left:8px">${escHtml(res.domain)}</span>
+        </div>`;
+    } else {
+      // Не знайдено — показуємо підказки
+      const suggs = res.suggestions || [];
+      let html = `<div style="background:rgba(247,90,90,.06);border:1px solid rgba(247,90,90,.2);border-radius:8px;padding:10px 12px;color:var(--red);margin-bottom:8px">
+        ⚠️ Акаунт не знайдено автоматично. Оберіть вручну або введіть username:</div>`;
+
+      if (suggs.length) {
+        html += `<div style="display:flex;flex-direction:column;gap:4px">`;
+        suggs.forEach(s => {
+          html += `<div style="cursor:pointer;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);font-size:12px;font-family:var(--mono);display:flex;justify-content:space-between"
+            onclick="document.getElementById('cd-cpanel-user').value='${escHtml(s.user)}';document.getElementById('cd-lookup-result').innerHTML=''">
+            <span><strong>${escHtml(s.user)}</strong> <span style="color:var(--muted)">${escHtml(s.domain)}</span></span>
+            <span style="color:var(--muted);font-size:11px">${escHtml(s.email)}</span>
+          </div>`;
+        });
+        html += `</div>`;
+      } else {
+        html += `<div style="color:var(--muted);font-size:12px">Схожих акаунтів не знайдено. Введіть username вручну.</div>`;
+      }
+      resultEl.innerHTML = html;
+    }
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);font-size:12px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
 async function submitChangeDomain() {
-  const clientId = document.getElementById('modal-change-domain').dataset.clientId;
-  const domain   = document.getElementById('cd-new-domain').value.trim().toLowerCase();
-  const err      = document.getElementById('cd-modal-error');
+  const clientId  = document.getElementById('modal-change-domain').dataset.clientId;
+  const domain    = document.getElementById('cd-new-domain').value.trim().toLowerCase();
+  const cpanelUser = document.getElementById('cd-cpanel-user').value.trim();
+  const err       = document.getElementById('cd-modal-error');
 
   err.classList.remove('show');
 
@@ -2309,10 +2368,13 @@ async function submitChangeDomain() {
   btn.disabled = true;
   btn.innerHTML = '…Чекаємо';
 
+  const payload = { domain };
+  if (cpanelUser) payload.cpanel_user = cpanelUser;
+
   try {
-    const res = await apiFetch(`/admin/clients/${clientId}/domain`, 'PUT', { domain });
+    const res = await apiFetch(`/admin/clients/${clientId}/domain`, 'PUT', payload);
     closeChangeDomainModal();
-    toast(`Домен змінено на: ${res.new_domain}`, 'success');
+    toast(`Домен змінено на: ${res.new_domain} (${res.cpanel_user})`, 'success');
   } catch (e) {
     showErr(err, e.message);
   } finally {
