@@ -4,21 +4,19 @@
  * Цей файл виконується на Vercel як serverless function.
  * Локально (OSPanel) — ігнорується, там працює index.php.
  *
- * Маршрутизує всі /api/* запити → http://lemons.developer.pp.ua/api/*
+ * Маршрутизує всі /api/* запити → https://my.apartner.pro/api/*
  *
- * Чому HTTP а не HTTPS:
- *   Без Cloudflare проксі SSL сертифікат хостингу не покриває lemons.developer.pp.ua,
- *   тому з'єднання Vercel→бекенд йде через HTTP (зв'язок між двома серверами).
+ * Запити що приходять на my.hostpro.apartner.pro проксіюються на my.apartner.pro.
+ * З'єднання Vercel→бекенд йде через HTTPS.
  *   Клієнт→Vercel завжди HTTPS.
  */
 
 const http = require('http');
 const https = require('https');
 
-const BACKEND_HOST = 'lemons.developer.pp.ua';
-// HTTP тому що без CF проксі немає валідного SSL на хостингу для цього субдомену
-const BACKEND_PROTOCOL = 'http';
-const BACKEND_PORT = 80;
+const BACKEND_HOST = 'my.apartner.pro';
+const BACKEND_PROTOCOL = 'https';
+const BACKEND_PORT = 443;
 
 module.exports = async function handler(req, res) {
   // OPTIONS preflight — відповідаємо одразу без звернення до бекенду
@@ -50,7 +48,7 @@ module.exports = async function handler(req, res) {
     forwardHeaders[lower] = value;
   }
   forwardHeaders['host'] = BACKEND_HOST;
-  forwardHeaders['x-forwarded-host'] = req.headers['host'] || 'my.hostpro.apartner.pro';
+  forwardHeaders['x-forwarded-host'] = req.headers['host'] || 'my.apartner.pro';
   forwardHeaders['x-forwarded-proto'] = 'https';
   if (bodyBuffer) {
     forwardHeaders['content-length'] = String(bodyBuffer.length);
